@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mohit M07 - OBS Live Chat Poll</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@600;700;800&family=Space+Grotesk:wght@700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="poll.css">
+</head>
+<body>
+  <div class="poll-overlay" id="pollOverlay" style="display: none;">
+    <div class="poll-card" id="pollCard">
+      <div class="poll-header">
+        <div class="live-tag">
+          <span class="pulse-dot"></span> LIVE CHAT POLL
+        </div>
+        <div class="timer-tag" id="pollTimerBadge"><i class="fa-regular fa-clock"></i> 60s</div>
+      </div>
+      
+      <h3 class="poll-question" id="pollQuestion">Which game should we play next?</h3>
+      
+      <div class="poll-options-list" id="pollOptionsList">
+        <!-- Options injected dynamically -->
+      </div>
+      
+      <div class="poll-footer">
+        <span class="footer-hint">Type <strong id="pollVoteGuide">1, 2, or 3</strong> in chat to vote!</span>
+        <span class="total-votes" id="pollTotalVotes">0 Votes</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="poll.js"></script>
+</body>
+</html>

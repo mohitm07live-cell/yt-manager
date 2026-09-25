@@ -1,0 +1,29 @@
+{
+  "subscriberGoal": {
+    "enabled": true,
+    "title": "Subscriber Goal",
+    "current": 2270,
+    "target": 2500,
+    "unit": "Subs",
+    "theme": "emerald",
+    "autoSync": true
+  },
+  "likeGoal": {
+    "enabled": false,
+    "title": "Stream Likes",
+    "current": 0,
+    "target": 100,
+    "unit": "Likes",
+    "theme": "cyan",
+    "autoSync": true
+  },
+  "superChatGoal": {
+    "enabled": false,
+    "title": "Super Chat Goal",
+    "current": 0,
+    "target": 1000,
+    "unit": "₹",
+    "theme": "gold",
+    "autoSync": true
+  }
+}

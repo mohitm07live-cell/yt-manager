@@ -1,0 +1,571 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --theme-color: #10b981;
+  --theme-color-secondary: #059669;
+  --theme-glow: rgba(16, 185, 129, 0.6);
+  --theme-glow-strong: rgba(16, 185, 129, 0.95);
+  --text-shadow-strong: 0 2px 4px #000000, 0 -1px 4px #000000, 2px 0 4px #000000, -2px 0 4px #000000, 0 0 12px #000000, 0 4px 16px rgba(0,0,0,0.9);
+}
+
+body {
+  background: transparent !important;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+#celebrationCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.goals-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 500px;
+  position: relative;
+  z-index: 10;
+}
+
+/* ============================================================= */
+/* 100% TRUE TRANSPARENT FLOATING GOAL CARD                     */
+/* ============================================================= */
+.goal-card {
+  position: relative;
+  border-radius: 16px;
+  padding: 8px 12px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Ambient plate is 100% TRANSPARENT by default */
+.card-ambient-plate {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  border-radius: inherit;
+  z-index: -2;
+  transition: all 0.3s ease;
+}
+
+.card-border-glow {
+  display: none;
+}
+
+/* ------------------------------------------------------------- */
+/* Header Elements (Floating in 3D Space)                        */
+/* ------------------------------------------------------------- */
+.goal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 2;
+}
+
+.goal-title-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.goal-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #ffffff;
+  position: relative;
+  background: linear-gradient(135deg, var(--theme-color) 0%, var(--theme-color-secondary) 100%);
+  box-shadow: 0 0 16px var(--theme-glow), 0 4px 10px rgba(0, 0, 0, 0.6);
+  flex-shrink: 0;
+}
+
+.goal-icon-badge i {
+  position: relative;
+  z-index: 2;
+  animation: iconHeartbeat 3s ease-in-out infinite;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.icon-pulse-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  border: 1.5px solid var(--theme-color);
+  opacity: 0;
+  animation: ringPulse 2.5s infinite ease-out;
+}
+
+@keyframes ringPulse {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  70% { transform: scale(1.35); opacity: 0; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+@keyframes iconHeartbeat {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.22); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.15); }
+  60% { transform: scale(1); }
+}
+
+.title-meta-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.goal-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+  text-shadow: var(--text-shadow-strong);
+}
+
+.goal-level-tag {
+  font-family: 'Space Grotesk', monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: var(--theme-color);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px var(--theme-glow), var(--text-shadow-strong);
+}
+
+/* Floating Numbers Badge */
+.goal-count-badge {
+  font-family: 'Space Grotesk', 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0, 0, 0, 0.65);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7), 0 0 14px var(--theme-glow);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.count-current {
+  color: #ffffff;
+  font-weight: 900;
+  text-shadow: 0 0 10px var(--theme-color), 0 2px 4px #000;
+}
+
+.count-divider {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+}
+
+.count-target {
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 2px 4px #000;
+}
+
+/* ------------------------------------------------------------- */
+/* Progress Bar & Track                                          */
+/* ------------------------------------------------------------- */
+.progress-track-wrapper {
+  position: relative;
+  width: 100%;
+  margin: 3px 0 8px 0;
+}
+
+.progress-track {
+  width: 100%;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 
+    inset 0 3px 8px rgba(0, 0, 0, 0.95),
+    0 2px 6px rgba(0, 0, 0, 0.6),
+    0 0 12px rgba(0, 0, 0, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  position: relative;
+  background: linear-gradient(90deg, var(--theme-color-secondary) 0%, var(--theme-color) 70%, #ffffff 100%);
+  transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 0 20px var(--theme-glow-strong);
+  min-width: 6px;
+}
+
+/* Leading Laser Flare Edge */
+.fill-laser-tip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  border-radius: 9999px;
+  background: #ffffff;
+  box-shadow: 0 0 14px 4px #ffffff, 0 0 24px 6px var(--theme-color);
+}
+
+/* Liquid Shimmer Light Sweep */
+.fill-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.15) 35%, 
+    rgba(255, 255, 255, 0.8) 50%, 
+    rgba(255, 255, 255, 0.15) 65%, 
+    transparent 100%
+  );
+  animation: liquidShimmer 2s infinite linear;
+}
+
+@keyframes liquidShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(150%); }
+}
+
+.fill-glow-runner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, transparent 100%);
+  border-radius: inherit;
+}
+
+/* Subtle Milestone Markers (25%, 50%, 75%) */
+.track-markers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.track-markers .marker {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 1.5px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 1px;
+}
+.track-markers .m25 { left: 25%; }
+.track-markers .m50 { left: 50%; }
+.track-markers .m75 { left: 75%; }
+
+/* ------------------------------------------------------------- */
+/* Footer Elements                                               */
+/* ------------------------------------------------------------- */
+.goal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-weight: 800;
+  position: relative;
+  z-index: 2;
+}
+
+.goal-percent {
+  font-family: 'Space Grotesk', monospace;
+  color: var(--theme-color);
+  letter-spacing: 0.6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-shadow: 0 0 10px var(--theme-glow), var(--text-shadow-strong);
+}
+
+.goal-percent::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--theme-color);
+  box-shadow: 0 0 10px var(--theme-color);
+  display: inline-block;
+  animation: pulseDot 1.4s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0%, 100% { transform: scale(0.8); opacity: 0.7; }
+  50% { transform: scale(1.35); opacity: 1; }
+}
+
+.goal-eta {
+  color: #ffffff;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: 0.2px;
+  text-shadow: var(--text-shadow-strong);
+}
+
+/* ------------------------------------------------------------- */
+/* Celebration Shake & Flash Animation                           */
+/* ------------------------------------------------------------- */
+.goal-card.celebrate {
+  animation: cardCelebrate 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes cardCelebrate {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.08); filter: drop-shadow(0 0 25px var(--theme-glow-strong)); }
+  60% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+/* ============================================================= */
+/* THEMES & COLOR PALETTES                                       */
+/* ============================================================= */
+.goal-card.emerald {
+  --theme-color: #10b981;
+  --theme-color-secondary: #059669;
+  --theme-glow: rgba(16, 185, 129, 0.6);
+  --theme-glow-strong: rgba(16, 185, 129, 0.95);
+}
+
+.goal-card.cyan {
+  --theme-color: #06b6d4;
+  --theme-color-secondary: #0284c7;
+  --theme-glow: rgba(6, 182, 212, 0.6);
+  --theme-glow-strong: rgba(6, 182, 212, 0.95);
+}
+
+.goal-card.gold {
+  --theme-color: #f59e0b;
+  --theme-color-secondary: #d97706;
+  --theme-glow: rgba(245, 158, 11, 0.6);
+  --theme-glow-strong: rgba(245, 158, 11, 0.95);
+}
+
+.goal-card.purple {
+  --theme-color: #a855f7;
+  --theme-color-secondary: #7e22ce;
+  --theme-glow: rgba(168, 85, 247, 0.6);
+  --theme-glow-strong: rgba(168, 85, 247, 0.95);
+}
+
+.goal-card.crimson {
+  --theme-color: #ef4444;
+  --theme-color-secondary: #b91c1c;
+  --theme-glow: rgba(239, 68, 68, 0.6);
+  --theme-glow-strong: rgba(239, 68, 68, 0.95);
+}
+
+.goal-card.rainbow {
+  --theme-color: #38bdf8;
+  --theme-color-secondary: #a855f7;
+  --theme-glow: rgba(56, 189, 248, 0.6);
+  --theme-glow-strong: rgba(236, 72, 153, 0.95);
+}
+.goal-card.rainbow .progress-fill {
+  background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981, #06b6d4, #a855f7, #ec4899);
+  background-size: 300% 100%;
+  animation: rainbowShift 4s linear infinite;
+}
+@keyframes rainbowShift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+/* ============================================================= */
+/* 🎨 TEMPLATES                                                  */
+/* ============================================================= */
+
+/* 1. CYBER NEON HUD */
+.goal-card.template-cyber .goal-title {
+  font-family: 'Rajdhani', 'Outfit', sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 17px;
+}
+.goal-card.template-cyber .progress-track {
+  border-radius: 4px;
+  height: 18px;
+  border: 1.5px solid var(--theme-color);
+  box-shadow: 0 0 10px var(--theme-glow), inset 0 2px 6px rgba(0,0,0,0.9);
+}
+.goal-card.template-cyber .progress-fill {
+  border-radius: 2px;
+}
+.goal-card.template-cyber .goal-icon-badge {
+  border-radius: 6px;
+  clip-path: polygon(0 0, 100% 0, 100% 80%, 80% 100%, 0 100%);
+}
+
+/* 2. COMPACT PILL */
+.goal-card.template-pill {
+  padding: 6px 10px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.goal-card.template-pill .goal-icon-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 13px;
+}
+.goal-card.template-pill .goal-title {
+  font-size: 14px;
+}
+.goal-card.template-pill .goal-level-tag {
+  display: none;
+}
+.goal-card.template-pill .goal-count-badge {
+  font-size: 13px;
+  padding: 2px 10px;
+}
+.goal-card.template-pill .progress-track {
+  height: 12px;
+}
+.goal-card.template-pill .goal-footer {
+  font-size: 10.5px;
+}
+
+/* 3. ESPORTS ANGLED */
+.goal-card.template-esports .goal-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+.goal-card.template-esports .progress-track {
+  border-radius: 0;
+  height: 16px;
+  transform: skewX(-12deg);
+}
+.goal-card.template-esports .progress-fill {
+  border-radius: 0;
+}
+.goal-card.template-esports .goal-icon-badge {
+  border-radius: 0;
+  transform: skewX(-10deg);
+}
+
+/* 4. LEVEL UP / RPG */
+.goal-card.template-rpg .goal-icon-badge {
+  background: linear-gradient(135deg, #fbbf24 0%, #b45309 100%);
+  color: #000000;
+  box-shadow: 0 0 14px rgba(251, 191, 36, 0.7);
+}
+.goal-card.template-rpg .goal-level-tag {
+  color: #fbbf24;
+  font-weight: 900;
+}
+.goal-card.template-rpg .progress-fill {
+  background: linear-gradient(90deg, #d97706 0%, #f59e0b 50%, #fef08a 100%);
+}
+
+/* 5. MINIMAL LINE */
+.goal-card.template-minimal {
+  padding: 4px 6px;
+}
+.goal-card.template-minimal .goal-icon-badge {
+  width: 26px;
+  height: 26px;
+  font-size: 12px;
+}
+.goal-card.template-minimal .progress-track {
+  height: 8px;
+}
+.goal-card.template-minimal .goal-level-tag {
+  display: none;
+}
+
+/* 6. FROSTED GLASS ACRYLIC (Only active when explicitly chosen) */
+.goal-card.template-glass .card-ambient-plate,
+body.bg-frosted .card-ambient-plate {
+  background: rgba(12, 18, 35, 0.75) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75) !important;
+}
+.goal-card.template-glass,
+body.bg-frosted .goal-card {
+  padding: 16px 20px !important;
+}
+
+body.bg-solid .card-ambient-plate {
+  background: #090e1c !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9) !important;
+}
+body.bg-solid .goal-card {
+  padding: 16px 20px !important;
+}
+
+/* ============================================================= */
+/* SIZE MODIFIERS                                                */
+/* ============================================================= */
+.goals-container.size-small {
+  max-width: 360px;
+}
+.goals-container.size-small .goal-title {
+  font-size: 13.5px;
+}
+.goals-container.size-small .goal-icon-badge {
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+}
+.goals-container.size-small .progress-track {
+  height: 12px;
+}
+
+.goals-container.size-large {
+  max-width: 620px;
+}
+.goals-container.size-large .goal-title {
+  font-size: 19px;
+}
+.goals-container.size-large .progress-track {
+  height: 22px;
+}
+
+.goals-container.size-wide {
+  max-width: 860px;
+}

@@ -1,0 +1,446 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: transparent;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+#particleCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 99;
+}
+
+.alert-container {
+  perspective: 1000px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================= */
+/* Sleek, Compact & Clean Broadcast Alert Card                  */
+/* ============================================================= */
+.alert-card {
+  display: none;
+  align-items: center;
+  gap: 16px;
+  background: rgba(10, 14, 26, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 14px 24px 14px 16px;
+  min-width: 380px;
+  max-width: 520px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 16px 36px -6px rgba(0, 0, 0, 0.7),
+    0 0 25px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-50px) scale(0.92);
+  opacity: 0;
+}
+
+/* Professional Stream Smooth Slide & Spring Animations */
+.alert-card.show {
+  display: flex !important;
+  animation: cleanSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.alert-card.hide {
+  display: flex !important;
+  animation: cleanSlideOut 0.4s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+@keyframes cleanSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.94);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes cleanSlideOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.94);
+    filter: blur(8px);
+  }
+}
+
+/* Vertical / Top Media Layout (if selected) */
+.alert-card.layout-top {
+  flex-direction: column;
+  text-align: center;
+  padding: 20px 28px;
+  gap: 12px;
+  min-width: 360px;
+  max-width: 440px;
+}
+
+.alert-card.layout-top .tagline-row {
+  justify-content: center;
+}
+
+.alert-card.layout-top .alert-media-img,
+.alert-card.layout-top .alert-media-video {
+  max-width: 110px;
+  max-height: 110px;
+}
+
+/* Media Box (GIF, WebM, MP4) */
+.alert-media-box {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alert-media-img,
+.alert-media-video {
+  max-width: 72px;
+  max-height: 72px;
+  object-fit: contain;
+  border-radius: 12px;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.5));
+}
+
+/* Subtle Rotating Edge Accent */
+.glow-border-effect {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    transparent, 
+    rgba(255, 255, 255, 0.15), 
+    transparent 20%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15),
+    transparent 70%
+  );
+  animation: rotateBeam 6s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.scanline-effect {
+  display: none; /* Keep clean and crisp */
+}
+
+/* Compact Hologram Badge */
+.alert-badge-box {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.icon-pulse-aura-1 {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  border-radius: 18px;
+  background: inherit;
+  opacity: 0.5;
+  filter: blur(10px);
+  animation: auraPulse 2.5s infinite ease-in-out;
+}
+
+.icon-pulse-aura-2 {
+  display: none;
+}
+
+.alert-icon-wrap {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 22px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+.sparkle-star {
+  display: none;
+}
+
+/* ============================================================= */
+/* Crisp & Clean Streamer Typography                             */
+/* ============================================================= */
+.alert-content {
+  display: flex;
+  flex-direction: column;
+  z-index: 2;
+  flex: 1;
+  min-width: 0;
+}
+
+.tagline-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 2px;
+}
+
+.alert-pill-tag {
+  font-family: 'Space Grotesk', 'Rajdhani', sans-serif;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #38bdf8;
+  padding: 2.5px 9px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Audio Equalizer Bars */
+.sound-wave-eq {
+  display: flex;
+  align-items: flex-end;
+  gap: 2.5px;
+  height: 12px;
+}
+
+.sound-wave-eq .bar {
+  width: 2.5px;
+  background: currentColor;
+  border-radius: 2px;
+  animation: soundBounce 0.75s ease-in-out infinite alternate;
+}
+
+.sound-wave-eq .b1 { height: 40%; animation-delay: 0.1s; }
+.sound-wave-eq .b2 { height: 85%; animation-delay: 0.3s; }
+.sound-wave-eq .b3 { height: 100%; animation-delay: 0.15s; }
+.sound-wave-eq .b4 { height: 60%; animation-delay: 0.45s; }
+.sound-wave-eq .b5 { height: 90%; animation-delay: 0.25s; }
+
+.live-event-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-left: auto;
+}
+
+/* Clean, Crisp Username */
+.alert-username {
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+  margin: 2px 0 3px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 380px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+.alert-subtext {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13.5px;
+  color: #cbd5e1;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 400px;
+}
+
+/* Subtle Shimmer Ray */
+.shimmer-shine {
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: shineSweep 4s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Slim Countdown Timer Bar */
+.alert-timer-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, #38bdf8, #818cf8);
+  transform-origin: left center;
+  transform: scaleX(1);
+}
+
+.alert-card.show .alert-timer-bar {
+  animation: timerDrain 5.5s linear forwards;
+}
+
+/* ============================================================= */
+/* Sleek Color Palettes                                          */
+/* ============================================================= */
+
+/* 1. Subscriber: Clean Neon Emerald */
+.alert-card.subscriber {
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.8), 0 0 20px rgba(16, 185, 129, 0.2);
+}
+.alert-card.subscriber .alert-icon-wrap {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+}
+.alert-card.subscriber .alert-pill-tag {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+.alert-card.subscriber .sound-wave-eq {
+  color: #34d399;
+}
+.alert-card.subscriber .alert-timer-bar {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+/* 2. Super Chat: Crisp Amber Gold */
+.alert-card.superChat {
+  border-color: rgba(245, 158, 11, 0.45);
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.8), 0 0 22px rgba(245, 158, 11, 0.25);
+}
+.alert-card.superChat .alert-icon-wrap {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.45);
+}
+.alert-card.superChat .alert-pill-tag {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+.alert-card.superChat .alert-username {
+  color: #fef08a;
+}
+.alert-card.superChat .sound-wave-eq {
+  color: #fbbf24;
+}
+.alert-card.superChat .alert-timer-bar {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+/* 3. Membership: Royal Magenta Purple */
+.alert-card.membership {
+  border-color: rgba(168, 85, 247, 0.45);
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.8), 0 0 22px rgba(168, 85, 247, 0.25);
+}
+.alert-card.membership .alert-icon-wrap {
+  background: linear-gradient(135deg, #a855f7, #7e22ce);
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.45);
+}
+.alert-card.membership .alert-pill-tag {
+  color: #c084fc;
+  background: rgba(168, 85, 247, 0.14);
+  border-color: rgba(168, 85, 247, 0.35);
+}
+.alert-card.membership .sound-wave-eq {
+  color: #c084fc;
+}
+.alert-card.membership .alert-timer-bar {
+  background: linear-gradient(90deg, #a855f7, #ec4899);
+}
+
+/* 4. Unsubscriber: Subtle Rose */
+.alert-card.unsubscriber {
+  border-color: rgba(244, 63, 94, 0.4);
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.8), 0 0 18px rgba(244, 63, 94, 0.2);
+}
+.alert-card.unsubscriber .alert-icon-wrap {
+  background: linear-gradient(135deg, #f43f5e, #be123c);
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.4);
+}
+.alert-card.unsubscriber .alert-pill-tag {
+  color: #fb7185;
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(244, 63, 94, 0.3);
+}
+.alert-card.unsubscriber .sound-wave-eq {
+  color: #fb7185;
+}
+.alert-card.unsubscriber .alert-timer-bar {
+  background: linear-gradient(90deg, #f43f5e, #fb7185);
+}
+
+/* ============================================================= */
+/* Keyframes                                                     */
+/* ============================================================= */
+@keyframes rotateBeam {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes auraPulse {
+  0%, 100% { transform: scale(0.95); opacity: 0.3; }
+  50% { transform: scale(1.1); opacity: 0.6; }
+}
+
+@keyframes soundBounce {
+  0% { transform: scaleY(0.3); }
+  100% { transform: scaleY(1.2); }
+}
+
+@keyframes shineSweep {
+  0% { left: -150%; }
+  25% { left: 150%; }
+  100% { left: 150%; }
+}
+
+@keyframes timerDrain {
+  0% { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
+}

@@ -1,0 +1,29 @@
+# Local environment files (not needed on Render, all defaults built-in)
+.env.local
+.env.*.local
+
+# Dependency directories
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Audio & Media Caches (Keep repo light)
+data/tts_cache/
+data/tts_chunks/
+data/tts_studio/
+downloads/
+
+# Heavy Local Windows Binaries
+bin/
+*.exe
+DesktopOverlay.exe
+
+# Scratch & Temporary Logs
+scratch/
+.system_generated/
+*.log
+
+# OS Generated Files
+.DS_Store
+Thumbs.db

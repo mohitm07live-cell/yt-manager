@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mohit M07 Official Manager - Ultra OBS Live Stream Alerts</title>
+  
+  <!-- Premium Modern Streamer & Esports Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;0,800;1,700&family=JetBrains+Mono:wght@600;700;800&family=Montserrat:wght@700;800;900&family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Rajdhani:wght@600;700;800&family=Russo+One&family=Space+Grotesk:wght@600;700;800&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/alerts.css">
+</head>
+<body>
+  <!-- Canvas for Multi-Shape Confetti, Sparkles, Coins & Particles -->
+  <canvas id="particleCanvas"></canvas>
+
+  <div id="alertContainer" class="alert-container">
+    <div id="alertCard" class="alert-card">
+      <!-- Animated Rotating Conic Border Beam -->
+      <div class="glow-border-effect"></div>
+      <div class="scanline-effect"></div>
+
+      <!-- Animated Media / GIF / Video Display Box -->
+      <div class="alert-media-box" id="alertMediaBox" style="display: none;">
+        <img id="alertMediaImg" src="" alt="Alert Animation" class="alert-media-img" />
+        <video id="alertMediaVideo" src="" class="alert-media-video" autoplay loop muted playsinline></video>
+      </div>
+
+      <!-- Left Badge & Holographic Icon Box with Pulse Aura (Fallback / Companion) -->
+      <div class="alert-badge-box" id="alertBadgeBox">
+        <div class="icon-pulse-aura-1"></div>
+        <div class="icon-pulse-aura-2"></div>
+        <div class="alert-icon-wrap" id="alertIconWrap">
+          <i class="fa-solid fa-heart" id="alertIcon"></i>
+          <span class="sparkle-star s1">✦</span>
+          <span class="sparkle-star s2">✦</span>
+        </div>
+      </div>
+
+      <!-- Alert Details Typography -->
+      <div class="alert-content">
+        <div class="tagline-row">
+          <span class="alert-pill-tag" id="alertTagline">NEW SUBSCRIBER!</span>
+          <div class="sound-wave-eq" id="soundWaveEq">
+            <span class="bar b1"></span>
+            <span class="bar b2"></span>
+            <span class="bar b3"></span>
+            <span class="bar b4"></span>
+            <span class="bar b5"></span>
+          </div>
+          <span class="live-event-time" id="alertTime">JUST NOW</span>
+        </div>
+        
+        <h2 class="alert-username" id="alertUsername">Viewer</h2>
+        <p class="alert-subtext" id="alertSubtext">Welcome to the stream family!</p>
+      </div>
+
+      <!-- Animated Shimmer Shine Sweep -->
+      <div class="shimmer-shine"></div>
+      
+      <!-- Progress Countdown Line -->
+      <div class="alert-timer-bar" id="alertTimerBar"></div>
+    </div>
+  </div>
+
+  <!-- Dedicated Audio Pipelines for OBS CEF Media Routing -->
+  <audio id="alertAudioPlayer" preload="auto" playsinline></audio>
+  <audio id="ttsAudioPlayer" preload="auto" playsinline></audio>
+
+  <!-- Audio Context & Alert Engine -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/alerts.js"></script>
+</body>
+</html>

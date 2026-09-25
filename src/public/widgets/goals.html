@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mohit M07 - Premium OBS Live Stream Goals</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Space+Grotesk:wght@600;700;800&family=JetBrains+Mono:wght@700;800&family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="goals.css">
+</head>
+<body>
+  <!-- Particle Confetti Canvas for Level Up / Milestone Celebrations -->
+  <canvas id="celebrationCanvas"></canvas>
+
+  <div class="goals-container" id="goalsContainer">
+    <!-- 1. Subscriber Goal Widget -->
+    <div class="goal-card emerald" id="subGoalCard">
+      <!-- Glow ambient background plate (vital for 100% text readability in transparent mode) -->
+      <div class="card-ambient-plate"></div>
+      <div class="card-border-glow"></div>
+
+      <div class="goal-header">
+        <div class="goal-title-box">
+          <div class="goal-icon-badge" id="subGoalIconBadge">
+            <i class="fa-solid fa-heart" id="subGoalIcon"></i>
+            <span class="icon-pulse-ring"></span>
+          </div>
+          <div class="title-meta-col">
+            <span class="goal-title" id="subGoalTitle">Subscriber Goal</span>
+            <span class="goal-level-tag" id="subGoalLevelTag">MILESTONE LVL 1</span>
+          </div>
+        </div>
+        <div class="goal-count-badge">
+          <span class="count-current" id="subGoalCurrent">2,300</span>
+          <span class="count-divider">/</span>
+          <span class="count-target" id="subGoalTarget">2,500</span>
+        </div>
+      </div>
+
+      <div class="progress-track-wrapper">
+        <div class="progress-track">
+          <div class="progress-fill" id="subGoalFill" style="width: 92%;">
+            <div class="fill-shimmer"></div>
+            <div class="fill-glow-runner"></div>
+            <div class="fill-laser-tip"></div>
+          </div>
+        </div>
+        <!-- Milestone Markers (25%, 50%, 75%) -->
+        <div class="track-markers">
+          <span class="marker m25"></span>
+          <span class="marker m50"></span>
+          <span class="marker m75"></span>
+        </div>
+      </div>
+
+      <div class="goal-footer">
+        <div class="footer-left">
+          <span class="goal-percent" id="subGoalPercent">92.0% COMPLETED</span>
+        </div>
+        <div class="footer-right">
+          <span class="goal-eta" id="subGoalRemaining">200 Subs to go!</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Like Goal Widget -->
+    <div class="goal-card cyan" id="likeGoalCard" style="display: none;">
+      <div class="card-ambient-plate"></div>
+      <div class="card-border-glow"></div>
+
+      <div class="goal-header">
+        <div class="goal-title-box">
+          <div class="goal-icon-badge" id="likeGoalIconBadge">
+            <i class="fa-solid fa-thumbs-up" id="likeGoalIcon"></i>
+            <span class="icon-pulse-ring"></span>
+          </div>
+          <div class="title-meta-col">
+            <span class="goal-title" id="likeGoalTitle">Stream Likes</span>
+            <span class="goal-level-tag" id="likeGoalLevelTag">STREAM GOAL</span>
+          </div>
+        </div>
+        <div class="goal-count-badge">
+          <span class="count-current" id="likeGoalCurrent">14</span>
+          <span class="count-divider">/</span>
+          <span class="count-target" id="likeGoalTarget">100</span>
+        </div>
+      </div>
+
+      <div class="progress-track-wrapper">
+        <div class="progress-track">
+          <div class="progress-fill" id="likeGoalFill" style="width: 14%;">
+            <div class="fill-shimmer"></div>
+            <div class="fill-glow-runner"></div>
+            <div class="fill-laser-tip"></div>
+          </div>
+        </div>
+        <div class="track-markers">
+          <span class="marker m25"></span>
+          <span class="marker m50"></span>
+          <span class="marker m75"></span>
+        </div>
+      </div>
+
+      <div class="goal-footer">
+        <div class="footer-left">
+          <span class="goal-percent" id="likeGoalPercent">14.0% COMPLETED</span>
+        </div>
+        <div class="footer-right">
+          <span class="goal-eta" id="likeGoalRemaining">86 Likes to go!</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Super Chat Goal Widget -->
+    <div class="goal-card gold" id="superGoalCard" style="display: none;">
+      <div class="card-ambient-plate"></div>
+      <div class="card-border-glow"></div>
+
+      <div class="goal-header">
+        <div class="goal-title-box">
+          <div class="goal-icon-badge" id="superGoalIconBadge">
+            <i class="fa-solid fa-gem" id="superGoalIcon"></i>
+            <span class="icon-pulse-ring"></span>
+          </div>
+          <div class="title-meta-col">
+            <span class="goal-title" id="superGoalTitle">Super Chat Goal</span>
+            <span class="goal-level-tag" id="superGoalLevelTag">FAN SUPPORT</span>
+          </div>
+        </div>
+        <div class="goal-count-badge">
+          <span class="count-current" id="superGoalCurrent">₹0</span>
+          <span class="count-divider">/</span>
+          <span class="count-target" id="superGoalTarget">₹1,000</span>
+        </div>
+      </div>
+
+      <div class="progress-track-wrapper">
+        <div class="progress-track">
+          <div class="progress-fill" id="superGoalFill" style="width: 0%;">
+            <div class="fill-shimmer"></div>
+            <div class="fill-glow-runner"></div>
+            <div class="fill-laser-tip"></div>
+          </div>
+        </div>
+        <div class="track-markers">
+          <span class="marker m25"></span>
+          <span class="marker m50"></span>
+          <span class="marker m75"></span>
+        </div>
+      </div>
+
+      <div class="goal-footer">
+        <div class="footer-left">
+          <span class="goal-percent" id="superGoalPercent">0.0% COMPLETED</span>
+        </div>
+        <div class="footer-right">
+          <span class="goal-eta" id="superGoalRemaining">₹1,000 to go!</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="goals.js"></script>
+</body>
+</html>
