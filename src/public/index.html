@@ -7,10 +7,10 @@
   <meta name="referrer" content="no-referrer">
   <meta name="description" content="Mohit M07 Official Manager - Next-generation YouTube Live Chat Moderation & Channel Management Bot with real-time commands, timers, and spam protection.">
   
-  <!-- Premium Modern Google Fonts -->
+  <!-- Premium Modern Google Fonts (GenZ Auth Typography) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -32,11 +32,12 @@
         </div>
         <div class="brand-text">
           <h2 id="sidebarBrandTitle">MOHIT-M07 <span>Manager</span></h2>
-          <span class="badge-version">Official Pro</span>
+          <span class="badge-version">Enterprise Cloud</span>
         </div>
       </div>
 
       <nav class="nav-menu">
+        <div class="nav-section-title">CORE MANAGEMENT</div>
         <a href="#overview" class="nav-item active" data-tab="overview">
           <i class="fa-solid fa-chart-pie"></i>
           <span>Overview</span>
@@ -46,6 +47,13 @@
           <span>Channel Analytics</span>
           <span class="badge-version" style="font-size: 9px; padding: 1px 5px; margin-left: auto;">PRO</span>
         </a>
+        <a href="#live-feed" class="nav-item" data-tab="live-feed">
+          <i class="fa-solid fa-comments"></i>
+          <span>Live Chat Feed</span>
+          <span class="live-dot-nav"></span>
+        </a>
+
+        <div class="nav-section-title">CHAT AUTOMATION</div>
         <a href="#commands" class="nav-item" data-tab="commands">
           <i class="fa-solid fa-terminal"></i>
           <span>Commands</span>
@@ -60,11 +68,13 @@
           <i class="fa-solid fa-shield-halved"></i>
           <span>Auto-Moderation</span>
         </a>
-        <a href="#subscribers" class="nav-item" data-tab="subscribers">
-          <i class="fa-solid fa-users"></i>
-          <span>Subscribers</span>
-          <span class="nav-badge" id="subCountBadge">0</span>
+        <a href="#tts-studio" class="nav-item" data-tab="tts-studio">
+          <i class="fa-solid fa-microphone-lines"></i>
+          <span>TTS Voice Studio</span>
+          <span class="badge-version" style="font-size: 9px; padding: 1px 6px; margin-left: auto; background: linear-gradient(135deg, #ec4899, #8b5cf6); font-weight: 700; color: #fff;">AI PRO</span>
         </a>
+
+        <div class="nav-section-title">STREAM & OBS HUDs</div>
         <a href="#alerts" class="nav-item" data-tab="alerts">
           <i class="fa-solid fa-tower-broadcast"></i>
           <span>Live Alerts & OBS</span>
@@ -72,11 +82,7 @@
         <a href="#goals" class="nav-item" data-tab="goals">
           <i class="fa-solid fa-bullseye"></i>
           <span>Goals & Widgets</span>
-          <span class="badge-version" style="font-size: 9px; padding: 1px 5px; margin-left: auto;">PRO</span>
-        </a>
-        <a href="#soundboard" class="nav-item" data-tab="soundboard">
-          <i class="fa-solid fa-volume-high"></i>
-          <span>Soundboard SFX</span>
+          <span class="badge-version" style="font-size: 9px; padding: 1px 5px; margin-left: auto;">HUD</span>
         </a>
         <a href="#polls" class="nav-item" data-tab="polls">
           <i class="fa-solid fa-square-poll-vertical"></i>
@@ -85,6 +91,22 @@
         <a href="#loyalty" class="nav-item" data-tab="loyalty">
           <i class="fa-solid fa-trophy"></i>
           <span>Loyalty & Mini-Games</span>
+        </a>
+        <a href="#multistream" class="nav-item" data-tab="multistream">
+          <i class="fa-solid fa-layer-group"></i>
+          <span>Multi-Stream Overlay</span>
+          <span class="badge-version" style="font-size: 9px; padding: 1px 6px; margin-left: auto; background: linear-gradient(135deg, #3B82F6, #8B5CF6); font-weight: 700; color: #fff;">HUD</span>
+        </a>
+
+        <div class="nav-section-title">STUDIO & TOOLS</div>
+        <a href="#subscribers" class="nav-item" data-tab="subscribers">
+          <i class="fa-solid fa-users"></i>
+          <span>Subscribers</span>
+          <span class="nav-badge" id="subCountBadge">0</span>
+        </a>
+        <a href="#soundboard" class="nav-item" data-tab="soundboard">
+          <i class="fa-solid fa-volume-high"></i>
+          <span>Soundboard SFX</span>
         </a>
         <a href="#highlights" class="nav-item" data-tab="highlights">
           <i class="fa-solid fa-scissors"></i>
@@ -95,22 +117,6 @@
           <span>Video Downloader</span>
           <span class="badge-version" style="font-size: 9px; padding: 1px 6px; margin-left: auto; background: linear-gradient(135deg, #10b981, #06b6d4); font-weight: 700; color: #fff;">4K/HD</span>
         </a>
-        <a href="#multistream" class="nav-item" data-tab="multistream">
-          <i class="fa-solid fa-layer-group"></i>
-          <span>Multi-Stream Overlay</span>
-          <span class="badge-version" style="font-size: 9px; padding: 1px 6px; margin-left: auto; background: linear-gradient(135deg, #3B82F6, #8B5CF6); font-weight: 700; color: #fff;">HUD</span>
-        </a>
-        <a href="#tts-studio" class="nav-item" data-tab="tts-studio">
-          <i class="fa-solid fa-microphone-lines"></i>
-          <span>TTS Voice Studio</span>
-          <span class="badge-version" style="font-size: 9px; padding: 1px 6px; margin-left: auto; background: linear-gradient(135deg, #ec4899, #8b5cf6); font-weight: 700; color: #fff;">AI PRO</span>
-        </a>
-        <a href="#live-feed" class="nav-item" data-tab="live-feed">
-          <i class="fa-solid fa-comments"></i>
-          <span>Live Chat Feed</span>
-          <span class="live-dot-nav"></span>
-        </a>
-
         <a href="#simulator" class="nav-item" data-tab="simulator">
           <i class="fa-solid fa-flask"></i>
           <span>Test Simulator</span>
@@ -149,8 +155,8 @@
           <!-- YouTube API Quota Header Pill -->
           <div class="quota-header-pill" id="quotaHeaderPill" title="Daily YouTube API Quota Units Used">
             <i class="fa-brands fa-youtube" style="color: var(--yt-red);"></i>
-            <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Quota:</span>
-            <span id="headerQuotaStatus" style="color: var(--accent-rose); font-weight: 700;">10,000 / 10,000</span>
+            <span class="quota-label">Quota:</span>
+            <span id="headerQuotaStatus" class="quota-value">10,000 / 10,000</span>
           </div>
 
           <!-- Bot ON/OFF Switch -->
