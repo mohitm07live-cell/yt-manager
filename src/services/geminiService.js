@@ -90,62 +90,75 @@ class GeminiService {
       throw new Error('Gemini API Key is not configured. Please add your Gemini API Key in Settings.');
     }
 
-    const modelName = this.config.model || 'gemini-2.5-flash';
+    const preferredModel = this.config.model || 'gemini-2.5-flash';
+    const fallbackModels = [preferredModel, 'gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'].filter((v, i, a) => a.indexOf(v) === i);
     const sysPrompt = systemInstruction || this.config.customPrompt || undefined;
 
-    // 1. Try official @google/generative-ai SDK
-    try {
-      const genAI = this.getGenAI();
-      if (genAI) {
-        const model = genAI.getGenerativeModel({
-          model: modelName,
-          systemInstruction: sysPrompt ? { parts: [{ text: sysPrompt }] } : undefined,
+    let lastError = null;
+
+    for (const modelName of fallbackModels) {
+      try {
+        // 1. Try official SDK
+        const genAI = this.getGenAI();
+        if (genAI) {
+          const model = genAI.getGenerativeModel({
+            model: modelName,
+            systemInstruction: sysPrompt ? { parts: [{ text: sysPrompt }] } : undefined,
+            generationConfig: {
+              temperature: options.temperature !== undefined ? options.temperature : 0.7,
+              maxOutputTokens: options.maxOutputTokens || 1200
+            }
+          });
+
+          const result = await model.generateContent(prompt);
+          const response = await result.response;
+          const text = response.text();
+          if (text) return text.trim();
+        }
+      } catch (sdkErr) {
+        // fallback to REST or next model
+      }
+
+      try {
+        // 2. Direct REST API
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+        const contents = [{ role: 'user', parts: [{ text: prompt }] }];
+        const body = {
+          contents,
           generationConfig: {
             temperature: options.temperature !== undefined ? options.temperature : 0.7,
             maxOutputTokens: options.maxOutputTokens || 1200
           }
+        };
+
+        if (sysPrompt) {
+          body.systemInstruction = { parts: [{ text: sysPrompt }] };
+        }
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
         });
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-        if (text) return text.trim();
+        if (response.ok) {
+          const data = await response.json();
+          const candidate = data.candidates?.[0];
+          const text = candidate?.content?.parts?.[0]?.text || '';
+          if (text) return text.trim();
+        } else {
+          const errJson = await response.json().catch(() => ({}));
+          lastError = new Error(errJson.error?.message || `Gemini API error: ${response.status}`);
+        }
+      } catch (restErr) {
+        lastError = restErr;
       }
-    } catch (sdkErr) {
-      console.warn('[GeminiService] SDK call warning, falling back to direct REST API:', sdkErr.message);
     }
 
-    // 2. Direct REST Fallback
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-    const contents = [{ role: 'user', parts: [{ text: prompt }] }];
-    const body = {
-      contents,
-      generationConfig: {
-        temperature: options.temperature !== undefined ? options.temperature : 0.7,
-        maxOutputTokens: options.maxOutputTokens || 1200
-      }
-    };
-
-    if (sysPrompt) {
-      body.systemInstruction = { parts: [{ text: sysPrompt }] };
-    }
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-      const errJson = await response.json().catch(() => ({}));
-      throw new Error(errJson.error?.message || `Gemini API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const candidate = data.candidates?.[0];
-    const text = candidate?.content?.parts?.[0]?.text || '';
-    return text.trim();
+    if (lastError) throw lastError;
+    return '';
   }
+
 
   /**
    * Generates a smart Hinglish reply to a viewer's chat question
@@ -159,7 +172,6 @@ Reply directly to @${viewerName} in 1 short, hype, friendly sentence (Max 150 ch
       
       const reply = await this.generateText(prompt);
       if (reply) {
-        // Strip any quotes or excessive formatting
         return reply.replace(/^["']|["']$/g, '').slice(0, 180);
       }
     } catch (e) {
@@ -167,6 +179,49 @@ Reply directly to @${viewerName} in 1 short, hype, friendly sentence (Max 150 ch
     }
     return null;
   }
+
+  /**
+   * Generates a smart Hinglish/English reply to a YouTube video comment
+   */
+  async generateVideoCommentReply({ authorName, commentText, videoTitle = '', persona = 'friendly_gamer', customInstructions = '' }) {
+
+    if (!this.getApiKey()) return null;
+
+    try {
+      let toneGuidance = "friendly, warm, engaging, and appreciative";
+      if (persona === 'gamer' || persona === 'friendly_gamer') {
+        toneGuidance = "hype, friendly Indian gamer vibe, Hinglish/Hindi-English mixed, natural and conversational";
+      } else if (persona === 'professional') {
+        toneGuidance = "polite, professional, appreciative and clear";
+      } else if (persona === 'funny') {
+        toneGuidance = "witty, humorous, cheerful and funny";
+      }
+
+      const prompt = `You are replying to a YouTube comment as the channel creator (MOHIT-M07 / @mohitm07live).
+Video Title: "${videoTitle || 'YouTube Video'}"
+Comment by @${authorName || 'Viewer'}: "${commentText}"
+
+Guidelines:
+1. Reply tone: ${toneGuidance}.
+2. Keep the reply concise (1 to 2 short sentences, maximum 200 characters).
+3. Sound authentic like a real creator replying to a fan.
+4. If they ask a question or compliment, respond directly and warmly.
+5. Do NOT include quotation marks around your reply.
+6. Do NOT use spammy hashtags or excessive links.
+${customInstructions ? `Additional creator instructions: ${customInstructions}` : ''}
+
+Generate the exact reply message only:`;
+
+      const reply = await this.generateText(prompt, "You are a professional YouTube creator assistant generating genuine, concise comment replies.");
+      if (reply) {
+        return reply.replace(/^["']|["']$/g, '').trim();
+      }
+    } catch (e) {
+      console.error('[GeminiService] Error generating video comment reply:', e.message);
+    }
+    return null;
+  }
+
 
   /**
    * Generates a fresh Live Trivia Question using Gemini AI

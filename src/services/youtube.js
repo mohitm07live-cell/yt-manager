@@ -572,7 +572,69 @@ class YouTubeService {
       throw err;
     }
   }
+
+  /**
+   * Fetch recent comment threads for the channel or specific video
+   */
+  async fetchCommentThreads(authClient, options = {}) {
+    const quotaInfo = db.getQuotaInfo();
+    if (quotaInfo.isExceeded) {
+      throw new Error('YouTube API Quota exceeded. Cannot fetch comments right now.');
+    }
+
+    const youtube = this.getYoutubeClient(authClient);
+    try {
+      db.recordQuotaUsage(1, 'commentThreads.list');
+      const params = {
+        part: ['snippet', 'replies'],
+        maxResults: options.maxResults || 20,
+        order: options.order || 'time',
+        textFormat: 'plainText'
+      };
+
+      if (options.videoId) {
+        params.videoId = options.videoId;
+      } else {
+        params.allThreadsRelatedToChannelId = options.channelId || db.getChannelInfo()?.id;
+      }
+
+      const res = await youtube.commentThreads.list(params);
+      return res.data.items || [];
+    } catch (err) {
+      this.handleApiError(err, 'Fetch Comment Threads');
+      throw err;
+    }
+  }
+
+  /**
+   * Reply to a YouTube comment thread
+   */
+  async postCommentReply(authClient, parentId, textOriginal) {
+    const quotaInfo = db.getQuotaInfo();
+    if (quotaInfo.isExceeded) {
+      throw new Error('YouTube API Quota exceeded. Cannot post comment reply right now.');
+    }
+
+    const youtube = this.getYoutubeClient(authClient);
+    try {
+      db.recordQuotaUsage(50, 'comments.insert');
+      const res = await youtube.comments.insert({
+        part: ['snippet'],
+        requestBody: {
+          snippet: {
+            parentId: parentId,
+            textOriginal: textOriginal
+          }
+        }
+      });
+      return res.data;
+    } catch (err) {
+      this.handleApiError(err, `Post Comment Reply to ${parentId}`);
+      throw err;
+    }
+  }
 }
 
 module.exports = new YouTubeService();
+
 

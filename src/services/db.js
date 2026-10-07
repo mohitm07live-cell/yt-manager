@@ -858,6 +858,122 @@ class Database {
     }
     return false;
   }
+
+  // ==========================================
+  // AI VIDEO COMMENTS AUTO-RESPONDER METHODS
+  // ==========================================
+  getCommentResponderSettings() {
+    if (!this.data.commentAutoResponder) {
+      this.data.commentAutoResponder = {
+        enabled: false,
+        checkIntervalSeconds: 60,
+        persona: 'friendly_gamer',
+        customPrompt: '',
+        maxDailyReplies: 100,
+        repliesToday: 0,
+        lastResetDate: new Date().toISOString().split('T')[0],
+        minCommentLength: 2,
+        filterSpam: true,
+        ignoreOwnComments: true,
+        specificVideoOnly: false,
+        specificVideoId: '',
+        totalRepliedCount: 0,
+        lastCheckTime: null
+      };
+      this.save();
+    }
+
+    // Daily reset check
+    const today = new Date().toISOString().split('T')[0];
+    if (this.data.commentAutoResponder.lastResetDate !== today) {
+      this.data.commentAutoResponder.repliesToday = 0;
+      this.data.commentAutoResponder.lastResetDate = today;
+      this.save();
+    }
+
+    return this.data.commentAutoResponder;
+  }
+
+  updateCommentResponderSettings(newSettings) {
+    const current = this.getCommentResponderSettings();
+    this.data.commentAutoResponder = { ...current, ...newSettings };
+    this.save();
+    return this.data.commentAutoResponder;
+  }
+
+  getRepliedCommentIds() {
+    if (!Array.isArray(this.data.repliedCommentIds)) {
+      this.data.repliedCommentIds = [];
+    }
+    return this.data.repliedCommentIds;
+  }
+
+  isCommentReplied(commentId) {
+    if (!commentId) return true;
+    const ids = this.getRepliedCommentIds();
+    return ids.includes(commentId);
+  }
+
+  markCommentReplied(commentId, metadata = {}) {
+    if (!commentId) return;
+    if (!Array.isArray(this.data.repliedCommentIds)) {
+      this.data.repliedCommentIds = [];
+    }
+    if (!this.data.repliedCommentIds.includes(commentId)) {
+      this.data.repliedCommentIds.push(commentId);
+      // Keep up to 2000 remembered IDs
+      if (this.data.repliedCommentIds.length > 2000) {
+        this.data.repliedCommentIds = this.data.repliedCommentIds.slice(-2000);
+      }
+    }
+
+    // Increment today and total counts
+    const settings = this.getCommentResponderSettings();
+    settings.repliesToday = (settings.repliesToday || 0) + 1;
+    settings.totalRepliedCount = (settings.totalRepliedCount || 0) + 1;
+
+    // Add to logs
+    this.addCommentReplyLog({
+      id: 'cr-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      commentId,
+      videoId: metadata.videoId || '',
+      videoTitle: metadata.videoTitle || '',
+      authorName: metadata.authorName || 'Viewer',
+      authorAvatar: metadata.authorAvatar || '',
+      commentText: metadata.commentText || '',
+      replyText: metadata.replyText || '',
+      publishedAt: metadata.publishedAt || new Date().toISOString(),
+      repliedAt: new Date().toISOString(),
+      status: metadata.status || 'success'
+    });
+
+    this.save();
+  }
+
+  getCommentReplyLogs() {
+    if (!Array.isArray(this.data.commentReplyLogs)) {
+      this.data.commentReplyLogs = [];
+    }
+    return this.data.commentReplyLogs;
+  }
+
+  addCommentReplyLog(logItem) {
+    if (!Array.isArray(this.data.commentReplyLogs)) {
+      this.data.commentReplyLogs = [];
+    }
+    this.data.commentReplyLogs.unshift(logItem);
+    if (this.data.commentReplyLogs.length > 200) {
+      this.data.commentReplyLogs = this.data.commentReplyLogs.slice(0, 200);
+    }
+    this.save();
+  }
+
+  clearCommentReplyLogs() {
+    this.data.commentReplyLogs = [];
+    this.save();
+    return true;
+  }
 }
 
 module.exports = new Database();
+

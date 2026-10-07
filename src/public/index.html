@@ -73,6 +73,12 @@
           <span>TTS Voice Studio</span>
           <span class="badge-version" style="font-size: 9px; padding: 1px 6px; margin-left: auto; background: linear-gradient(135deg, #ec4899, #8b5cf6); font-weight: 700; color: #fff;">AI PRO</span>
         </a>
+        <a href="#comment-responder" class="nav-item" data-tab="comment-responder">
+          <i class="fa-solid fa-reply-all"></i>
+          <span>AI Comments Bot</span>
+          <span class="badge-version" style="font-size: 9px; padding: 1px 6px; margin-left: auto; background: linear-gradient(135deg, #10b981, #6366f1); font-weight: 700; color: #fff;">AI BOT</span>
+        </a>
+
 
         <div class="nav-section-title">STREAM & OBS HUDs</div>
         <a href="#alerts" class="nav-item" data-tab="alerts">
@@ -3434,7 +3440,309 @@
           </div>
 
         </section>
+
+        <!-- ======================================================== -->
+        <!-- AI VIDEO COMMENTS AUTO-RESPONDER TAB -->
+        <!-- ======================================================== -->
+        <section id="tab-comment-responder" class="tab-pane">
+          
+          <!-- Top Hero / Stats Grid -->
+          <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
+            <div class="stat-card">
+              <div class="stat-icon icon-emerald">
+                <i class="fa-solid fa-power-off"></i>
+              </div>
+              <div class="stat-details">
+                <span class="stat-label">Automation Engine</span>
+                <h3 class="stat-value" id="crStatStatus">Disabled</h3>
+                <span class="stat-trend" id="crStatStatusSub"><i class="fa-solid fa-circle"></i> Service Idle</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon icon-purple">
+                <i class="fa-solid fa-reply-all"></i>
+              </div>
+              <div class="stat-details">
+                <span class="stat-label">Replied Today</span>
+                <h3 class="stat-value" id="crStatToday">0</h3>
+                <span class="stat-trend"><i class="fa-solid fa-calendar-day"></i> Daily Quota Protected</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon icon-cyan">
+                <i class="fa-solid fa-comments"></i>
+              </div>
+              <div class="stat-details">
+                <span class="stat-label">Total Comments Replied</span>
+                <h3 class="stat-value" id="crStatTotal">0</h3>
+                <span class="stat-trend"><i class="fa-solid fa-bolt"></i> AI Generated</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon icon-amber">
+                <i class="fa-solid fa-robot"></i>
+              </div>
+              <div class="stat-details">
+                <span class="stat-label">Active Persona</span>
+                <h3 class="stat-value" id="crStatPersona" style="font-size: 1.25rem;">Gamer Hype</h3>
+                <span class="stat-trend"><i class="fa-solid fa-brain"></i> Gemini 2.5 Flash</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Control & Settings Layout -->
+          <div style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; margin-bottom: 24px;">
+            
+            <!-- Left: Settings & Controls Card -->
+            <div class="glass-card">
+              <div class="card-header" style="justify-content: space-between;">
+                <div class="title-with-badge">
+                  <i class="fa-solid fa-sliders text-cyan"></i>
+                  <h3>Auto-Responder Settings</h3>
+                  <span class="badge badge-purple">AI Powered</span>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <span class="live-status-pill offline" id="crLiveStatusPill">
+                    <span class="dot"></span>
+                    <span id="crLiveStatusText">Stopped</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="card-body">
+                <form id="commentResponderSettingsForm">
+                  
+                  <!-- Main Toggle Switch -->
+                  <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); margin-bottom: 20px;">
+                    <div>
+                      <h4 style="margin: 0 0 4px 0; color: #fff; font-size: 15px;">Enable Auto-Reply Engine</h4>
+                      <p style="margin: 0; font-size: 12px; color: var(--text-muted);">Automatically scans channel videos/Shorts and posts Gemini AI replies</p>
+                    </div>
+                    <label class="switch" style="position: relative; display: inline-block; width: 48px; height: 26px;">
+                      <input type="checkbox" id="crEnabledToggle" style="opacity: 0; width: 0; height: 0;">
+                      <span class="slider round" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .3s; border-radius: 26px;"></span>
+                    </label>
+                  </div>
+
+                  <!-- Polling Interval & Daily Limits -->
+                  <div class="form-row" style="margin-bottom: 16px;">
+                    <div class="form-group" style="flex: 1;">
+                      <label style="font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; display: block;">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Check Frequency (Interval):
+                      </label>
+                      <select id="crCheckInterval" class="form-control" style="width: 100%; padding: 10px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;">
+                        <option value="30">Every 30 Seconds (Fast)</option>
+                        <option value="60" selected>Every 1 Minute (Recommended)</option>
+                        <option value="120">Every 2 Minutes (Quota Friendly)</option>
+                        <option value="300">Every 5 Minutes</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group" style="flex: 1;">
+                      <label style="font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; display: block;">
+                        <i class="fa-solid fa-shield-halved"></i> Max Daily Replies Limit:
+                      </label>
+                      <input type="number" id="crMaxDailyReplies" min="5" max="500" value="100" class="form-control" style="width: 100%; padding: 10px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;" />
+                    </div>
+                  </div>
+
+                  <!-- Tone / Persona Selector -->
+                  <div class="form-group" style="margin-bottom: 16px;">
+                    <label style="font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; display: block;">
+                      <i class="fa-solid fa-wand-magic-sparkles"></i> AI Tone & Persona:
+                    </label>
+                    <select id="crPersonaSelect" class="form-control" style="width: 100%; padding: 10px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;">
+                      <option value="friendly_gamer" selected>🎮 Friendly Gamer (Hinglish/Hindi Hype + Creator Vibe)</option>
+                      <option value="professional">💼 Professional & Appreciative (Polite, clear & warm)</option>
+                      <option value="funny">😂 Witty & Humorous (Playful, humorous & fun)</option>
+                      <option value="custom">✏️ Custom Persona & Prompt</option>
+                    </select>
+                  </div>
+
+                  <!-- Custom Prompt Field -->
+                  <div class="form-group" id="crCustomPromptWrap" style="margin-bottom: 16px; display: none;">
+                    <label style="font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; display: block;">
+                      Custom Instructions / Persona Prompt:
+                    </label>
+                    <textarea id="crCustomPrompt" rows="3" placeholder="e.g. Always mention 'MOHIT ARMY' and keep replies under 2 sentences in natural Hindi/English..." style="width: 100%; padding: 10px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;"></textarea>
+                  </div>
+
+                  <!-- Video Targeting Scope -->
+                  <div class="form-group" style="margin-bottom: 16px;">
+                    <label style="font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; display: block;">
+                      <i class="fa-solid fa-video"></i> Target Videos:
+                    </label>
+                    <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 10px;">
+                      <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #e2e8f0; cursor: pointer;">
+                        <input type="radio" name="crTargetScope" value="all" checked id="crTargetAll">
+                        <span>All Channel Videos & Shorts</span>
+                      </label>
+                      <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #e2e8f0; cursor: pointer;">
+                        <input type="radio" name="crTargetScope" value="specific" id="crTargetSpecific">
+                        <span>Specific Video Only</span>
+                      </label>
+                    </div>
+                    <div id="crSpecificVideoWrap" style="display: none;">
+                      <input type="text" id="crSpecificVideoId" placeholder="Enter Video ID (e.g. dQw4w9WgXcQ) or YouTube URL" style="width: 100%; padding: 10px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;" />
+                    </div>
+                  </div>
+
+                  <!-- Safety & Quality Checkboxes -->
+                  <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 14px; background: rgba(15,23,42,0.5); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #cbd5e1; cursor: pointer;">
+                      <input type="checkbox" id="crFilterSpam" checked>
+                      <span>Filter & skip abusive/profanity comments (using Auto-Moderation blocklist)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #cbd5e1; cursor: pointer;">
+                      <input type="checkbox" id="crIgnoreOwn" checked>
+                      <span>Skip channel owner's own comments</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #cbd5e1; cursor: pointer;">
+                      <input type="checkbox" id="crMinLengthCheck" checked>
+                      <span>Skip single-letter / empty spam (Minimum 2 characters)</span>
+                    </label>
+                  </div>
+
+                  <!-- Save Button & Trigger Row -->
+                  <div style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-secondary" id="crRunNowBtn" style="display: flex; align-items: center; gap: 8px;">
+                      <i class="fa-solid fa-play" id="crRunNowIcon"></i>
+                      <span>Scan & Reply Now</span>
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="crSaveSettingsBtn" style="display: flex; align-items: center; gap: 8px;">
+                      <i class="fa-solid fa-floppy-disk"></i>
+                      <span>Save Settings</span>
+                    </button>
+                  </div>
+
+                </form>
+              </div>
+            </div>
+
+            <!-- Right: Instructions & Tips Box -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              <div class="glass-card">
+                <div class="card-header">
+                  <div class="title-with-badge">
+                    <i class="fa-solid fa-sparkles text-purple"></i>
+                    <h3>How AI Auto-Reply Works</h3>
+                  </div>
+                </div>
+                <div class="card-body" style="font-size: 13px; color: #cbd5e1; line-height: 1.6;">
+                  <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                      <span style="background: rgba(16,185,129,0.2); color: #34d399; font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">1</span>
+                      <div>
+                        <strong style="color: #fff;">Automatic Comment Polling:</strong>
+                        <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">The engine detects new comments published on your videos in real-time.</p>
+                      </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                      <span style="background: rgba(99,102,241,0.2); color: #818cf8; font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">2</span>
+                      <div>
+                        <strong style="color: #fff;">Smart Gemini AI Response:</strong>
+                        <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">Reads the viewer's question or compliment and crafts a natural, personalized creator reply in natural Hinglish/Hindi.</p>
+                      </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                      <span style="background: rgba(236,72,153,0.2); color: #f472b6; font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">3</span>
+                      <div>
+                        <strong style="color: #fff;">Zero Duplicate Spam:</strong>
+                        <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">Database securely tracks all replied comment IDs so no comment is ever replied to more than once.</p>
+                      </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                      <span style="background: rgba(245,158,11,0.2); color: #fbbf24; font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">4</span>
+                      <div>
+                        <strong style="color: #fff;">Quota & Rate Safety:</strong>
+                        <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">Automatic daily limits safeguard your YouTube Data API free quota.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Status Summary Card -->
+              <div class="glass-card">
+                <div class="card-header">
+                  <div class="title-with-badge">
+                    <i class="fa-solid fa-circle-info text-cyan"></i>
+                    <h3>Service Status</h3>
+                  </div>
+                </div>
+                <div class="card-body" style="font-size: 13px; color: #cbd5e1;">
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span>Last Scan Time:</span>
+                    <strong id="crLastScanTimeText" style="color: var(--accent-cyan);">Never</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span>Channel Connected:</span>
+                    <strong id="crChannelConnectedText" style="color: #34d399;">MOHIT-M07</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                    <span>Gemini AI Engine:</span>
+                    <strong id="crGeminiStatusText" style="color: #38bdf8;">Gemini 2.5 Flash (Ready)</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom: Live Activity & Replied Comments History Table -->
+          <div class="glass-card">
+            <div class="card-header" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+              <div class="title-with-badge">
+                <i class="fa-solid fa-list-check text-emerald"></i>
+                <div>
+                  <h3>Auto-Replied Comments Log</h3>
+                  <span style="font-size: 11.5px; color: var(--text-muted);">Real-time log of comments detected and replied by Gemini AI</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <span class="badge badge-purple" id="crLogsCountBadge">0 Replies</span>
+                <button type="button" class="btn btn-sm btn-secondary" id="crRefreshLogsBtn">
+                  <i class="fa-solid fa-arrows-rotate"></i> Refresh
+                </button>
+                <button type="button" class="btn btn-sm btn-danger" id="crClearLogsBtn" style="background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3);">
+                  <i class="fa-solid fa-trash-can"></i> Clear
+                </button>
+              </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div id="crLogsEmptyState" class="empty-state" style="padding: 40px; text-align: center;">
+                <i class="fa-solid fa-comments" style="font-size: 32px; color: var(--text-subtle); margin-bottom: 10px;"></i>
+                <p style="color: var(--text-muted); font-size: 13.5px; margin: 0;">No comments replied yet. Enable the engine or click "Scan & Reply Now" above!</p>
+              </div>
+
+              <div id="crLogsTableWrap" style="display: none; overflow-x: auto;">
+                <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(15, 23, 42, 0.6); text-align: left; font-size: 12px; color: var(--text-secondary);">
+                      <th style="padding: 12px 16px;">Viewer & Video</th>
+                      <th style="padding: 12px 16px;">Original Comment</th>
+                      <th style="padding: 12px 16px;">AI Generated Reply</th>
+                      <th style="padding: 12px 16px;">Time</th>
+                      <th style="padding: 12px 16px; text-align: right;">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="crLogsTableBody">
+                    <!-- Dynamically Populated Rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </section>
       </div>
+
 
 
       <!-- App Compliant Footer -->

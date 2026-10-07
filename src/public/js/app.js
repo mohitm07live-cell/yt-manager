@@ -41,10 +41,12 @@ const tabMeta = {
   downloader: { title: 'YouTube Ultra-HD Video Downloader', subtitle: 'Download any YouTube Video, Short, or Stream in the Highest Possible Quality (Up to 4K / 8K) with FFmpeg audio merging' },
   multistream: { title: 'Multi-Stream Live Chat Overlay', subtitle: 'Aggregate & view real-time comments from multiple YouTube channels on a transparent floating overlay window while gaming' },
   'live-feed': { title: 'Live Chat Feed & Logs', subtitle: 'Real-time feed of live chat messages and bot responses' },
+  'comment-responder': { title: 'AI Video Comments Auto-Responder', subtitle: 'Automate smart, instant Gemini AI replies to comments on your YouTube videos & Shorts' },
 
   simulator: { title: 'Test Simulator', subtitle: 'Sandbox environment to test commands and moderation offline' },
   settings: { title: 'Bot & API Settings', subtitle: 'Configure polling rate, credentials, and bot variables' }
 };
+
 
 // -------------------------------------------------------------
 // Navigation & Tab Switching
@@ -4977,6 +4979,386 @@ async function deleteTtsHistoryFile(encodedFilename) {
 window.playTtsHistoryFile = playTtsHistoryFile;
 window.deleteTtsHistoryFile = deleteTtsHistoryFile;
 
+// =============================================================
+// AI Video Comments Auto-Responder Client Module
+// =============================================================
+
+let crSettings = {};
+let crLogs = [];
+
+function initCommentResponder() {
+  const form = document.getElementById('commentResponderSettingsForm');
+  const toggle = document.getElementById('crEnabledToggle');
+  const personaSelect = document.getElementById('crPersonaSelect');
+  const customPromptWrap = document.getElementById('crCustomPromptWrap');
+  const targetAll = document.getElementById('crTargetAll');
+  const targetSpecific = document.getElementById('crTargetSpecific');
+  const specificVideoWrap = document.getElementById('crSpecificVideoWrap');
+  const runNowBtn = document.getElementById('crRunNowBtn');
+  const refreshLogsBtn = document.getElementById('crRefreshLogsBtn');
+  const clearLogsBtn = document.getElementById('crClearLogsBtn');
+
+  if (personaSelect) {
+    personaSelect.addEventListener('change', () => {
+      if (customPromptWrap) {
+        customPromptWrap.style.display = personaSelect.value === 'custom' ? 'block' : 'none';
+      }
+    });
+  }
+
+  if (targetAll && targetSpecific && specificVideoWrap) {
+    targetAll.addEventListener('change', () => {
+      specificVideoWrap.style.display = targetSpecific.checked ? 'block' : 'none';
+    });
+    targetSpecific.addEventListener('change', () => {
+      specificVideoWrap.style.display = targetSpecific.checked ? 'block' : 'none';
+    });
+  }
+
+  if (toggle) {
+    toggle.addEventListener('change', async () => {
+      const enabled = toggle.checked;
+      try {
+        const res = await fetch('/api/comment-responder/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled })
+        });
+        const data = await res.json();
+        if (data.success) {
+          updateCommentResponderStatusUI(data.status);
+          showToast(enabled ? 'AI Comments Auto-Responder Started!' : 'AI Comments Auto-Responder Paused');
+        }
+      } catch (err) {
+        showToast('Failed to toggle Comment Auto-Responder: ' + err.message, true);
+        toggle.checked = !enabled;
+      }
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await saveCommentResponderSettings();
+    });
+  }
+
+  if (runNowBtn) {
+    runNowBtn.addEventListener('click', runCommentResponderNow);
+  }
+
+  if (refreshLogsBtn) {
+    refreshLogsBtn.addEventListener('click', () => {
+      fetchCommentResponderLogs();
+      showToast('Comment reply logs refreshed');
+    });
+  }
+
+  if (clearLogsBtn) {
+    clearLogsBtn.addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to clear all comment reply history?')) return;
+      try {
+        const res = await fetch('/api/comment-responder/logs', { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          crLogs = [];
+          renderCommentResponderLogs([]);
+          showToast('Comment reply logs cleared');
+        }
+      } catch (err) {
+        showToast('Failed to clear logs: ' + err.message, true);
+      }
+    });
+  }
+}
+
+async function fetchCommentResponderSettings() {
+  try {
+    const res = await fetch('/api/comment-responder/settings');
+    const data = await res.json();
+    if (data.success && data.settings) {
+      crSettings = data.settings;
+      populateCommentResponderUI(data.settings);
+    }
+    const statusRes = await fetch('/api/comment-responder/status');
+    const statusData = await statusRes.json();
+    if (statusData.success && statusData.status) {
+      updateCommentResponderStatusUI(statusData.status);
+    }
+  } catch (err) {
+    console.error('Error fetching comment responder settings:', err);
+  }
+}
+
+function populateCommentResponderUI(settings) {
+  const toggle = document.getElementById('crEnabledToggle');
+  const checkInterval = document.getElementById('crCheckInterval');
+  const maxDailyReplies = document.getElementById('crMaxDailyReplies');
+  const personaSelect = document.getElementById('crPersonaSelect');
+  const customPrompt = document.getElementById('crCustomPrompt');
+  const customPromptWrap = document.getElementById('crCustomPromptWrap');
+  const targetAll = document.getElementById('crTargetAll');
+  const targetSpecific = document.getElementById('crTargetSpecific');
+  const specificVideoWrap = document.getElementById('crSpecificVideoWrap');
+  const specificVideoId = document.getElementById('crSpecificVideoId');
+  const filterSpam = document.getElementById('crFilterSpam');
+  const ignoreOwn = document.getElementById('crIgnoreOwn');
+  const minLengthCheck = document.getElementById('crMinLengthCheck');
+
+  if (toggle) toggle.checked = Boolean(settings.enabled);
+  if (checkInterval) checkInterval.value = settings.checkIntervalSeconds || 60;
+  if (maxDailyReplies) maxDailyReplies.value = settings.maxDailyReplies || 100;
+  if (personaSelect) {
+    personaSelect.value = settings.persona || 'friendly_gamer';
+    if (customPromptWrap) {
+      customPromptWrap.style.display = settings.persona === 'custom' ? 'block' : 'none';
+    }
+  }
+  if (customPrompt) customPrompt.value = settings.customPrompt || '';
+
+  if (settings.specificVideoOnly) {
+    if (targetSpecific) targetSpecific.checked = true;
+    if (specificVideoWrap) specificVideoWrap.style.display = 'block';
+  } else {
+    if (targetAll) targetAll.checked = true;
+    if (specificVideoWrap) specificVideoWrap.style.display = 'none';
+  }
+  if (specificVideoId) specificVideoId.value = settings.specificVideoId || '';
+  if (filterSpam) filterSpam.checked = settings.filterSpam !== false;
+  if (ignoreOwn) ignoreOwn.checked = settings.ignoreOwnComments !== false;
+  if (minLengthCheck) minLengthCheck.checked = (settings.minCommentLength || 2) > 1;
+
+  // Update Stats Cards
+  const statToday = document.getElementById('crStatToday');
+  const statTotal = document.getElementById('crStatTotal');
+  const statPersona = document.getElementById('crStatPersona');
+  if (statToday) statToday.textContent = `${settings.repliesToday || 0} / ${settings.maxDailyReplies || 100}`;
+  if (statTotal) statTotal.textContent = settings.totalRepliedCount || 0;
+  if (statPersona) {
+    const personaLabels = {
+      friendly_gamer: 'Gamer Hype',
+      professional: 'Professional',
+      funny: 'Witty & Fun',
+      custom: 'Custom AI'
+    };
+    statPersona.textContent = personaLabels[settings.persona] || 'Gamer Hype';
+  }
+
+  const lastScanEl = document.getElementById('crLastScanTimeText');
+  if (lastScanEl && settings.lastCheckTime) {
+    const d = new Date(settings.lastCheckTime);
+    lastScanEl.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+}
+
+function updateCommentResponderStatusUI(status) {
+  const isRunning = status.running || status.enabled;
+  const statusEl = document.getElementById('crStatStatus');
+  const statusSub = document.getElementById('crStatStatusSub');
+  const livePill = document.getElementById('crLiveStatusPill');
+  const livePillText = document.getElementById('crLiveStatusText');
+  const toggle = document.getElementById('crEnabledToggle');
+
+  if (toggle) toggle.checked = Boolean(isRunning);
+
+  if (statusEl) {
+    statusEl.textContent = isRunning ? 'Active' : 'Disabled';
+    statusEl.style.color = isRunning ? '#34d399' : '#f87171';
+  }
+
+  if (statusSub) {
+    statusSub.innerHTML = isRunning 
+      ? '<i class="fa-solid fa-circle" style="color: #34d399;"></i> Polling for new comments' 
+      : '<i class="fa-solid fa-circle" style="color: #f87171;"></i> Service Idle';
+  }
+
+  if (livePill && livePillText) {
+    if (isRunning) {
+      livePill.className = 'live-status-pill online';
+      livePillText.textContent = 'Running';
+    } else {
+      livePill.className = 'live-status-pill offline';
+      livePillText.textContent = 'Stopped';
+    }
+  }
+
+  const statToday = document.getElementById('crStatToday');
+  const statTotal = document.getElementById('crStatTotal');
+  if (statToday && status.repliesToday !== undefined) {
+    statToday.textContent = `${status.repliesToday} / ${status.maxDailyReplies || 100}`;
+  }
+  if (statTotal && status.totalRepliedCount !== undefined) {
+    statTotal.textContent = status.totalRepliedCount;
+  }
+}
+
+async function saveCommentResponderSettings() {
+  const checkInterval = parseInt(document.getElementById('crCheckInterval')?.value) || 60;
+  const maxDailyReplies = parseInt(document.getElementById('crMaxDailyReplies')?.value) || 100;
+  const persona = document.getElementById('crPersonaSelect')?.value || 'friendly_gamer';
+  const customPrompt = document.getElementById('crCustomPrompt')?.value || '';
+  const specificVideoOnly = document.getElementById('crTargetSpecific')?.checked || false;
+  const specificVideoId = document.getElementById('crSpecificVideoId')?.value.trim() || '';
+  const filterSpam = document.getElementById('crFilterSpam')?.checked !== false;
+  const ignoreOwnComments = document.getElementById('crIgnoreOwn')?.checked !== false;
+  const minCommentLength = document.getElementById('crMinLengthCheck')?.checked ? 2 : 0;
+
+  const payload = {
+    checkIntervalSeconds: checkInterval,
+    maxDailyReplies,
+    persona,
+    customPrompt,
+    specificVideoOnly,
+    specificVideoId,
+    filterSpam,
+    ignoreOwnComments,
+    minCommentLength
+  };
+
+  try {
+    const res = await fetch('/api/comment-responder/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      crSettings = data.settings;
+      populateCommentResponderUI(data.settings);
+      showToast('AI Comment Auto-Responder Settings Saved!');
+    } else {
+      showToast('Failed to save settings: ' + (data.error || 'Unknown error'), true);
+    }
+  } catch (err) {
+    showToast('Failed to save settings: ' + err.message, true);
+  }
+}
+
+async function runCommentResponderNow() {
+  const btn = document.getElementById('crRunNowBtn');
+  const icon = document.getElementById('crRunNowIcon');
+  if (btn) btn.disabled = true;
+  if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
+
+  try {
+    const res = await fetch('/api/comment-responder/run-now', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      const { processedCount, repliedCount } = data.result || {};
+      showToast(`Scan complete! Processed: ${processedCount || 0}, Replied: ${repliedCount || 0}`);
+      if (data.status) updateCommentResponderStatusUI(data.status);
+      await fetchCommentResponderLogs();
+    } else {
+      showToast(data.error || 'Could not run comment scan', true);
+    }
+  } catch (err) {
+    showToast('Run error: ' + err.message, true);
+  } finally {
+    if (btn) btn.disabled = false;
+    if (icon) icon.className = 'fa-solid fa-play';
+  }
+}
+
+async function fetchCommentResponderLogs() {
+  try {
+    const res = await fetch('/api/comment-responder/logs');
+    const data = await res.json();
+    if (data.success && Array.isArray(data.logs)) {
+      crLogs = data.logs;
+      renderCommentResponderLogs(crLogs);
+    }
+  } catch (err) {
+    console.error('Error fetching comment reply logs:', err);
+  }
+}
+
+function renderCommentResponderLogs(logs) {
+  const emptyState = document.getElementById('crLogsEmptyState');
+  const tableWrap = document.getElementById('crLogsTableWrap');
+  const tableBody = document.getElementById('crLogsTableBody');
+  const countBadge = document.getElementById('crLogsCountBadge');
+
+  if (countBadge) {
+    countBadge.textContent = `${logs.length} Logged`;
+  }
+
+  if (!logs || logs.length === 0) {
+    if (emptyState) emptyState.style.display = 'block';
+    if (tableWrap) tableWrap.style.display = 'none';
+    return;
+  }
+
+  if (emptyState) emptyState.style.display = 'none';
+  if (tableWrap) tableWrap.style.display = 'block';
+  if (!tableBody) return;
+
+  tableBody.innerHTML = logs.map(item => {
+    const isSuccess = item.status === 'success';
+    const isIgnored = item.status === 'ignored';
+    const isFiltered = item.status === 'filtered';
+
+    let statusBadge = '<span class="badge" style="background: rgba(16,185,129,0.2); color: #34d399;"><i class="fa-solid fa-check"></i> Replied</span>';
+    if (isFiltered) {
+      statusBadge = '<span class="badge" style="background: rgba(239,68,68,0.2); color: #f87171;"><i class="fa-solid fa-ban"></i> Spam Filtered</span>';
+    } else if (isIgnored) {
+      statusBadge = '<span class="badge" style="background: rgba(148,163,184,0.2); color: #94a3b8;"><i class="fa-solid fa-forward"></i> Skipped</span>';
+    } else if (item.status === 'error') {
+      statusBadge = '<span class="badge" style="background: rgba(245,158,11,0.2); color: #fbbf24;"><i class="fa-solid fa-triangle-exclamation"></i> Error</span>';
+    }
+
+    const timeStr = item.repliedAt ? new Date(item.repliedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '--';
+    const avatarImg = item.authorAvatar 
+      ? `<img src="${item.authorAvatar}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none'" />` 
+      : '<i class="fa-solid fa-user-circle" style="font-size: 20px; color: var(--text-muted);"></i>';
+
+    const videoLink = item.videoId 
+      ? `<a href="https://youtu.be/${item.videoId}" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: none; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-brands fa-youtube" style="color: #ff0000;"></i> View Video <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 9px;"></i></a>` 
+      : '';
+
+    return `
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px;">
+        <td style="padding: 12px 16px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            ${avatarImg}
+            <div>
+              <strong style="color: #fff; font-size: 13px;">@${escapeHtml(item.authorName || 'Viewer')}</strong>
+              <div>${videoLink}</div>
+            </div>
+          </div>
+        </td>
+        <td style="padding: 12px 16px; color: #cbd5e1; max-width: 260px; word-break: break-word;">
+          "${escapeHtml(item.commentText || '')}"
+        </td>
+        <td style="padding: 12px 16px; color: #a78bfa; max-width: 280px; word-break: break-word;">
+          ${isSuccess ? `🤖 <strong style="color: #c4b5fd;">${escapeHtml(item.replyText || '')}</strong>` : `<span style="color: var(--text-muted); font-size: 12px;">${escapeHtml(item.replyText || '')}</span>`}
+        </td>
+        <td style="padding: 12px 16px; color: var(--text-muted); font-size: 11.5px; white-space: nowrap;">
+          ${timeStr}
+        </td>
+        <td style="padding: 12px 16px; text-align: right; white-space: nowrap;">
+          ${statusBadge}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// Socket event listeners for Comment Responder
+socket.on('commentResponderStatus', (status) => {
+  if (status) {
+    updateCommentResponderStatusUI(status);
+  }
+});
+
+socket.on('commentReplied', (replyRecord) => {
+  if (replyRecord) {
+    crLogs.unshift(replyRecord);
+    renderCommentResponderLogs(crLogs);
+    showToast(`🤖 Replied to comment by @${replyRecord.authorName}!`, 'success', 'AI Auto-Reply');
+  }
+});
+
+
 // Auto-populate all OBS overlay & OAuth URLs with dynamic cloud origin (Render/Localhost)
 function initDynamicOriginUrls() {
   const origin = window.location.origin;
@@ -5038,6 +5420,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initVideoDownloader();
   initMultiStreamModule();
   initTtsStudio();
+  initCommentResponder();
 
   // Load all initial data
   await Promise.all([
@@ -5059,9 +5442,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     fetchGeminiConfig(),
     fetchDownloadedFiles(),
     fetchMultiStreamConfig(),
-    fetchTtsHistory()
+    fetchTtsHistory(),
+    fetchCommentResponderSettings(),
+    fetchCommentResponderLogs()
   ]);
 });
+
 
 
 

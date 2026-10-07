@@ -24,7 +24,9 @@ const geminiService = require('./services/geminiService');
 const videoDownloaderService = require('./services/videoDownloaderService');
 const youtubeService = require('./services/youtube');
 const multiStreamService = require('./services/multiStreamService');
+const commentAutoResponderService = require('./services/commentAutoResponderService');
 const config = require('./config');
+
 
 const app = express();
 app.set('trust proxy', 1);
@@ -46,6 +48,9 @@ pollsService.setSocketIO(io);
 loyaltyService.setSocketIO(io);
 multiStreamService.setSocketIO(io);
 multiStreamService.init();
+commentAutoResponderService.setSocketIO(io);
+commentAutoResponderService.init();
+
 
 loyaltyService.setOnTimeoutCallback((timeoutMsg) => {
   if (botEngine.isRunning && auth.isAuthenticated() && botEngine.currentBroadcast?.liveChatId) {
@@ -1311,6 +1316,86 @@ app.post('/api/multistream/test-message', (req, res) => {
 });
 
 // -------------------------------------------------------------
+// AI Video Comments Auto-Responder API Routes
+// -------------------------------------------------------------
+app.get('/api/comment-responder/status', (req, res) => {
+  try {
+    const status = commentAutoResponderService.getStatus();
+    const settings = db.getCommentResponderSettings();
+    res.json({ success: true, status, settings });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/comment-responder/settings', (req, res) => {
+  try {
+    const settings = db.getCommentResponderSettings();
+    res.json({ success: true, settings });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/comment-responder/settings', (req, res) => {
+  try {
+    const updated = db.updateCommentResponderSettings(req.body);
+    if (updated.enabled && !commentAutoResponderService.timer) {
+      commentAutoResponderService.start();
+    } else if (!updated.enabled && commentAutoResponderService.timer) {
+      commentAutoResponderService.stop();
+    }
+    commentAutoResponderService.broadcastStatus();
+    res.json({ success: true, settings: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/comment-responder/toggle', async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    const status = await commentAutoResponderService.toggle(enabled);
+    res.json({ success: true, status });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/comment-responder/run-now', async (req, res) => {
+  try {
+    if (!auth.isAuthenticated()) {
+      return res.status(401).json({ error: 'Please connect your YouTube account first.' });
+    }
+    if (!geminiService.getApiKey()) {
+      return res.status(400).json({ error: 'Please set your Gemini API Key in Settings first.' });
+    }
+    const result = await commentAutoResponderService.processNewComments();
+    res.json({ success: true, result, status: commentAutoResponderService.getStatus() });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/comment-responder/logs', (req, res) => {
+  try {
+    const logs = db.getCommentReplyLogs();
+    res.json({ success: true, logs });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/comment-responder/logs', (req, res) => {
+  try {
+    db.clearCommentReplyLogs();
+    res.json({ success: true, message: 'Logs cleared.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
 // WebSocket Realtime Events
 // -------------------------------------------------------------
 
@@ -1323,9 +1408,18 @@ io.on('connection', (socket) => {
     logs: db.getLogs(30)
   });
 
+  // Comment Auto-Responder status
+  socket.emit('commentResponderStatus', commentAutoResponderService.getStatus());
+
   // Multi-Stream Overlay Socket Events
   socket.emit('multiChat:config', db.getMultiStreamConfig());
   multiStreamService.broadcastStreamStatuses();
+
+  socket.on('commentResponder:toggle', async (data) => {
+    const status = await commentAutoResponderService.toggle(data?.enabled);
+    io.emit('commentResponderStatus', status);
+  });
+
 
   socket.on('multiChat:getStreams', () => {
     multiStreamService.broadcastStreamStatuses();
