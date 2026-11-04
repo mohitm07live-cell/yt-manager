@@ -73,12 +73,6 @@
           <span>TTS Voice Studio</span>
           <span class="badge-version" style="font-size: 9px; padding: 1px 6px; margin-left: auto; background: linear-gradient(135deg, #ec4899, #8b5cf6); font-weight: 700; color: #fff;">AI PRO</span>
         </a>
-        <a href="#comment-responder" class="nav-item" data-tab="comment-responder">
-          <i class="fa-solid fa-reply-all"></i>
-          <span>AI Comments Bot</span>
-          <span class="badge-version" style="font-size: 9px; padding: 1px 6px; margin-left: auto; background: linear-gradient(135deg, #10b981, #6366f1); font-weight: 700; color: #fff;">AI BOT</span>
-        </a>
-
 
         <div class="nav-section-title">STREAM & OBS HUDs</div>
         <a href="#alerts" class="nav-item" data-tab="alerts">
@@ -120,8 +114,13 @@
         </a>
         <a href="#downloader" class="nav-item" data-tab="downloader">
           <i class="fa-solid fa-cloud-arrow-down"></i>
-          <span>Video Downloader</span>
-          <span class="badge-version" style="font-size: 9px; padding: 1px 6px; margin-left: auto; background: linear-gradient(135deg, #10b981, #06b6d4); font-weight: 700; color: #fff;">4K/HD</span>
+          <span>Media Downloader</span>
+          <span class="badge-version" style="font-size: 9px; padding: 1px 6px; margin-left: auto; background: linear-gradient(135deg, #ec4899, #8b5cf6); font-weight: 700; color: #fff;">IG &amp; YT</span>
+        </a>
+        <a href="#shorts-sync" class="nav-item" data-tab="shorts-sync">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>Auto Shorts Cloner</span>
+          <span class="badge-version" style="font-size: 9px; padding: 1px 6px; margin-left: auto; background: linear-gradient(135deg, #ef4444, #f59e0b); font-weight: 700; color: #fff;">AUTO</span>
         </a>
         <a href="#simulator" class="nav-item" data-tab="simulator">
           <i class="fa-solid fa-flask"></i>
@@ -2810,7 +2809,7 @@
         </section>
 
         <!-- ============================================================= -->
-        <!-- TAB: YOUTUBE ULTRA-HD VIDEO & AUDIO DOWNLOADER                -->
+        <!-- TAB: YOUTUBE & INSTAGRAM ULTRA-HD MEDIA DOWNLOADER (MP4)         -->
         <!-- ============================================================= -->
         <section class="tab-pane" id="tab-downloader">
           <!-- Top Hero Card -->
@@ -2819,15 +2818,18 @@
               <div class="title-with-badge">
                 <i class="fa-solid fa-cloud-arrow-down text-emerald" style="font-size: 22px;"></i>
                 <div>
-                  <h3 style="font-size: 18px; margin-bottom: 4px;">YouTube Ultra-HD Video Downloader</h3>
+                  <h3 style="font-size: 18px; margin-bottom: 4px;">YouTube &amp; Instagram Ultra-HD Media Downloader</h3>
                   <span style="font-size: 12px; color: var(--text-muted);">
-                    Download any YouTube Video, Short, or Stream in the Highest Possible Quality (Up to 4K / 8K 60FPS) with FFmpeg 7.1 Lossless Audio Merging
+                    Download any Instagram Reel, Post, Video or YouTube Video, Short in Highest Quality (Up to 1080p Full HD / 4K 60FPS) with FFmpeg Lossless MP4 Audio Merging
                   </span>
                 </div>
               </div>
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <span class="badge badge-emerald" style="display: flex; align-items: center; gap: 5px;">
-                  <i class="fa-solid fa-bolt"></i> yt-dlp + FFmpeg 7.1
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <span class="badge" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #fff; display: flex; align-items: center; gap: 5px; font-weight: 700;">
+                  <i class="fa-brands fa-instagram"></i> Instagram to MP4
+                </span>
+                <span class="badge badge-emerald" style="display: flex; align-items: center; gap: 5px; font-weight: 700;">
+                  <i class="fa-brands fa-youtube"></i> YouTube 4K
                 </span>
                 <button type="button" class="btn btn-secondary btn-sm" id="btnOpenDownloadsFolder" title="Open Downloads Folder in Windows Explorer">
                   <i class="fa-solid fa-folder-open"></i> Open Folder
@@ -2838,27 +2840,42 @@
             <div class="card-body">
               <!-- URL Input Box -->
               <div class="dl-search-container" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-lg); padding: 18px 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.3);">
-                <label style="display: block; font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 10px;">
-                  <i class="fa-brands fa-youtube" style="color: #ff0000; margin-right: 6px;"></i> Paste YouTube Video Link:
-                </label>
+                <!-- Platform Filter Tabs -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                  <label style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 0;">
+                    <i class="fa-solid fa-link" style="color: #38bdf8; margin-right: 6px;"></i> Paste Instagram or YouTube Link:
+                  </label>
+                  <div class="dl-platform-tags" style="display: flex; gap: 8px;">
+                    <span id="dlPlatformTagAuto" class="badge" style="cursor: pointer; background: rgba(56, 189, 248, 0.2); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 11px;">
+                      <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Detect
+                    </span>
+                    <span id="dlPlatformTagInsta" class="badge" style="cursor: pointer; background: rgba(236, 72, 153, 0.15); border: 1px solid rgba(236, 72, 153, 0.3); color: #f472b6; font-size: 11px;">
+                      <i class="fa-brands fa-instagram"></i> Instagram Reels
+                    </span>
+                    <span id="dlPlatformTagYt" class="badge" style="cursor: pointer; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; font-size: 11px;">
+                      <i class="fa-brands fa-youtube"></i> YouTube
+                    </span>
+                  </div>
+                </div>
+
                 <div class="dl-input-row" style="display: flex; gap: 10px; flex-wrap: wrap;">
                   <div style="position: relative; flex: 1; min-width: 280px;">
-                    <i class="fa-solid fa-link" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
-                    <input type="text" id="downloaderUrlInput" class="form-control" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." style="width: 100%; padding-left: 40px; padding-right: 75px; height: 48px; font-size: 14px; background: rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.15); color: #fff; border-radius: var(--radius-md);" />
+                    <i id="dlInputPlatformIcon" class="fa-solid fa-link" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 16px; transition: all 0.2s ease;"></i>
+                    <input type="text" id="downloaderUrlInput" class="form-control" placeholder="https://www.instagram.com/reel/... or https://www.youtube.com/watch?v=..." style="width: 100%; padding-left: 42px; padding-right: 75px; height: 48px; font-size: 14px; background: rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.15); color: #fff; border-radius: var(--radius-md);" />
                     <button type="button" id="btnPasteUrl" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: var(--text-muted); padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;">
                       <i class="fa-solid fa-paste"></i> Paste
                     </button>
                   </div>
                   <button type="button" class="btn btn-secondary" id="btnInspectVideo" style="height: 48px; padding: 0 20px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-magnifying-glass" id="inspectIcon"></i> Analyze Formats
+                    <i class="fa-solid fa-magnifying-glass" id="inspectIcon"></i> Analyze Media
                   </button>
                   <button type="button" class="btn btn-primary" id="btnInstantHighestDl" style="height: 48px; padding: 0 22px; font-weight: 700; background: linear-gradient(135deg, #10b981, #06b6d4); border: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-bolt"></i> 1-Click Highest Quality Download
+                    <i class="fa-solid fa-bolt"></i> 1-Click Highest Quality MP4
                   </button>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: var(--text-muted);">
-                  <span>Supports: Standard Videos, Shorts, Live Stream VODs & Premieres</span>
-                  <span>Audio & Video auto-merged into high-quality MP4</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; gap: 8px;">
+                  <span><i class="fa-brands fa-instagram" style="color: #ec4899;"></i> Instagram Reels, Posts &amp; Stories &bull; <i class="fa-brands fa-youtube" style="color: #ef4444;"></i> YouTube Videos &amp; Shorts</span>
+                  <span><i class="fa-solid fa-music text-cyan"></i> Audio &amp; Video Auto-Merged into 100% playable MP4</span>
                 </div>
               </div>
 
@@ -2866,17 +2883,18 @@
               <div id="downloaderPreviewBox" style="display: none; margin-top: 24px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-lg); padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
                 <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
                   <div style="position: relative; width: 280px; max-width: 100%; border-radius: var(--radius-md); overflow: hidden; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
-                    <img id="dlPreviewThumb" src="" alt="Thumbnail" style="width: 100%; height: auto; display: block;" />
+                    <img id="dlPreviewThumb" src="" alt="Thumbnail" style="width: 100%; height: auto; max-height: 280px; object-fit: cover; display: block;" />
                     <span id="dlPreviewDuration" style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.85); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">0:00</span>
-                    <span id="dlPreviewMaxBadge" style="position: absolute; top: 8px; left: 8px; background: linear-gradient(135deg, #10b981, #06b6d4); color: #fff; font-size: 10.5px; font-weight: 800; padding: 3px 8px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.5);">4K AVAILABLE</span>
+                    <span id="dlPreviewMaxBadge" style="position: absolute; top: 8px; left: 8px; background: linear-gradient(135deg, #10b981, #06b6d4); color: #fff; font-size: 10.5px; font-weight: 800; padding: 3px 8px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.5);">HD AVAILABLE</span>
+                    <span id="dlPreviewPlatformBadge" style="position: absolute; top: 8px; right: 8px; background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #fff; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.5);">INSTAGRAM</span>
                   </div>
 
                   <div style="flex: 1; min-width: 280px;">
                     <h4 id="dlPreviewTitle" style="font-size: 16px; font-weight: 700; color: #fff; line-height: 1.4; margin-bottom: 8px;">Video Title</h4>
                     <div style="display: flex; gap: 15px; font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px; flex-wrap: wrap;">
-                      <span id="dlPreviewChannel"><i class="fa-solid fa-user-circle"></i> Channel</span>
-                      <span id="dlPreviewViews"><i class="fa-solid fa-eye"></i> Views</span>
-                      <span id="dlPreviewResolutions"><i class="fa-solid fa-film"></i> Available: 4K, 1080p, 720p</span>
+                      <span id="dlPreviewChannel"><i class="fa-solid fa-user-circle"></i> Creator</span>
+                      <span id="dlPreviewViews"><i class="fa-solid fa-heart"></i> Likes</span>
+                      <span id="dlPreviewResolutions"><i class="fa-solid fa-film"></i> Available: 1080p, 720p</span>
                     </div>
 
                     <!-- Quality Selection Cards -->
@@ -2889,7 +2907,7 @@
                           <i class="fa-solid fa-crown" style="color: #fbbf24;"></i>
                           <span class="dl-q-title">Highest Possible</span>
                         </div>
-                        <div class="dl-q-sub" id="dlHighestResLabel">Best Quality (Up to 4K/8K)</div>
+                        <div class="dl-q-sub" id="dlHighestResLabel">Best Quality (Up to 1080p / 4K)</div>
                         <div class="dl-q-badge">RECOMMENDED</div>
                       </div>
 
@@ -2899,7 +2917,7 @@
                           <span class="dl-q-title">1080p Full HD</span>
                         </div>
                         <div class="dl-q-sub">Crisp 1080p 60/30fps</div>
-                        <div class="dl-q-badge">STANDARD HD</div>
+                        <div class="dl-q-badge">FULL HD</div>
                       </div>
 
                       <div class="dl-quality-card" data-quality="720p">
@@ -2907,7 +2925,7 @@
                           <i class="fa-solid fa-mobile-screen" style="color: #a78bfa;"></i>
                           <span class="dl-q-title">720p HD</span>
                         </div>
-                        <div class="dl-q-sub">Fast & Compact Size</div>
+                        <div class="dl-q-sub">Fast &amp; Compact Size</div>
                         <div class="dl-q-badge">LIGHTWEIGHT</div>
                       </div>
 
@@ -2933,7 +2951,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                   <div style="display: flex; align-items: center; gap: 10px;">
                     <div class="spinner-border" id="dlProgressSpinner" style="width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-                    <span id="dlStatusText" style="font-weight: 700; color: #fff; font-size: 14px;">Downloading video & audio streams...</span>
+                    <span id="dlStatusText" style="font-weight: 700; color: #fff; font-size: 14px;">Downloading media stream...</span>
                   </div>
                   <span id="dlPercentBadge" style="font-weight: 800; color: #38bdf8; font-size: 16px;">0%</span>
                 </div>
@@ -2982,7 +3000,7 @@
             <div class="card-header">
               <div class="title-with-badge">
                 <i class="fa-solid fa-clock-rotate-left text-cyan"></i>
-                <h3>Downloaded Videos & Library</h3>
+                <h3>Downloaded Videos &amp; Library</h3>
                 <span class="badge badge-purple" id="dlHistoryCountBadge">0 Files</span>
               </div>
               <div style="display: flex; gap: 10px;">
@@ -2999,13 +3017,14 @@
               <div id="dlEmptyState" style="text-align: center; padding: 35px 20px; color: var(--text-muted);">
                 <i class="fa-solid fa-video-slash" style="font-size: 38px; margin-bottom: 12px; opacity: 0.4;"></i>
                 <h4 style="font-size: 15px; color: #cbd5e1; margin-bottom: 5px;">No downloaded videos yet</h4>
-                <p style="font-size: 12.5px;">Paste any YouTube link above to download your first video in 4K / HD!</p>
+                <p style="font-size: 12.5px;">Paste any Instagram Reel or YouTube link above to download your first MP4 in HD / 4K!</p>
               </div>
 
               <div id="dlFilesTableWrap" style="display: none; overflow-x: auto;">
                 <table class="data-table" style="width: 100%; border-collapse: collapse;">
                   <thead>
                     <tr>
+                      <th style="text-align: left; padding: 10px 14px; width: 80px;">Source</th>
                       <th style="text-align: left; padding: 10px 14px;">File Name</th>
                       <th style="text-align: left; padding: 10px 14px; width: 120px;">Size</th>
                       <th style="text-align: left; padding: 10px 14px; width: 160px;">Downloaded Date</th>
@@ -3016,6 +3035,231 @@
                     <!-- Populated dynamically -->
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB: YOUTUBE AUTO SHORTS CLONER & UPLOADER                     -->
+        <!-- ============================================================= -->
+        <section class="tab-pane" id="tab-shorts-sync">
+          <!-- Top Hero Card -->
+          <div class="glass-card" style="margin-bottom: 24px; border: 1px solid rgba(239, 68, 68, 0.25); background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);">
+            <div class="card-header" style="flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #ef4444, #f59e0b); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <div>
+                  <h3 style="font-size: 20px; font-weight: 800; color: #fff; margin: 0 0 4px 0;">YouTube Auto Shorts Cloner & Uploader</h3>
+                  <span style="font-size: 13px; color: var(--text-muted);">
+                    Target channel ke top performing shorts automatically detect karke download karta hai aur tumhare channel par same Title, Tags aur Description ke sath upload karta hai.
+                  </span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span class="badge" id="shortsSyncDestBadge" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-circle-check"></i> Connected: <span id="shortsSyncDestName">MOHIT-M07</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Configuration Form -->
+            <div class="card-body" style="padding-top: 15px;">
+
+              <!-- Dedicated Destination Upload Channel Card -->
+              <div id="shortsDestCard" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <img id="shortsDestAvatar" src="https://yt3.ggpht.com/UiGHF1BF9d2-cEC14aRSo-r-9jMXVx55TH8JZSmtn347JL9_duo-yKUaT6N80_dYcHhgMeO7=s88-c-k-c0x00ffffff-no-rj" alt="Channel Avatar" style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid #3b82f6; object-fit: cover;" />
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 700;">Upload Destination Channel:</span>
+                      <span id="shortsDestTypeBadge" class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-size: 10px; padding: 2px 8px;">Connected</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px; flex-wrap: wrap;">
+                      <h4 id="shortsDestTitle" style="font-size: 16px; font-weight: 800; color: #fff; margin: 0;">MOHIT-M07</h4>
+                      <span id="shortsDestCustomUrl" style="font-size: 12px; color: #94a3b8;">@mohitm07livee</span>
+                      <span id="shortsDestSubCount" style="font-size: 11px; color: #fbbf24; background: rgba(251, 191, 36, 0.1); padding: 1px 6px; border-radius: 4px;">4.0K Subs</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <button type="button" id="btnToggleCustomOAuth" class="btn btn-sm btn-secondary" style="font-size: 12px; padding: 8px 12px; border-color: rgba(255,255,255,0.2);">
+                    <i class="fa-solid fa-key"></i> Custom Credentials
+                  </button>
+                  <a href="/auth/shorts-destination/login" class="btn btn-sm btn-primary" id="btnConnectShortsDest" style="background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; font-weight: 600; display: flex; align-items: center; gap: 6px; padding: 8px 14px; text-decoration: none;">
+                    <i class="fa-solid fa-arrows-rotate"></i> Connect / Switch Channel
+                  </a>
+                  <button type="button" id="btnDisconnectShortsDest" class="btn btn-sm btn-secondary" style="font-size: 12px; padding: 8px 12px; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+                    <i class="fa-solid fa-power-off"></i> Disconnect
+                  </button>
+                </div>
+              </div>
+
+              <!-- Collapsible Custom OAuth Credentials Panel -->
+              <div id="shortsCustomOAuthBox" style="display: none; background: rgba(15, 23, 42, 0.85); border: 1px dashed rgba(245, 158, 11, 0.4); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-shield-halved text-amber"></i>
+                    <h5 style="font-size: 14px; font-weight: 700; color: #fff; margin: 0;">Upload Channel Custom Google Cloud Credentials</h5>
+                  </div>
+                  <span style="font-size: 11px; color: var(--text-muted);">Optional (Use if separate project created for upload channel)</span>
+                </div>
+                <p style="font-size: 12px; color: #94a3b8; margin: 0 0 14px 0; line-height: 1.5;">
+                  Agar upload channel ke Google Account me alag Google Cloud Project banaya hai, toh uska Client ID aur Client Secret yahan enter kar sakte ho. Redirect URI me <code>http://localhost:3000/auth/google/callback</code> add hona chahiye.
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                  <div>
+                    <label style="display: block; font-size: 11px; font-weight: 600; color: #cbd5e1; margin-bottom: 4px;">OAuth Client ID:</label>
+                    <input type="text" id="customOAuthClientId" class="form-control" placeholder="xxxx.apps.googleusercontent.com" style="width: 100%; height: 38px; font-size: 12px; background: rgba(0,0,0,0.5); color: #fff; border-color: rgba(255,255,255,0.15);" />
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 11px; font-weight: 600; color: #cbd5e1; margin-bottom: 4px;">OAuth Client Secret:</label>
+                    <input type="password" id="customOAuthClientSecret" class="form-control" placeholder="GOCSPX-xxxx" style="width: 100%; height: 38px; font-size: 12px; background: rgba(0,0,0,0.5); color: #fff; border-color: rgba(255,255,255,0.15);" />
+                  </div>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                  <button type="button" id="btnResetCustomOAuth" class="btn btn-sm btn-secondary" style="font-size: 12px; padding: 6px 14px;">
+                    Reset to Default
+                  </button>
+                  <button type="button" id="btnSaveCustomOAuth" class="btn btn-sm btn-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; font-size: 12px; font-weight: 600; padding: 6px 16px;">
+                    Save Custom Credentials
+                  </button>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-bottom: 20px;">
+                <!-- Target Channel URL -->
+                <div style="grid-column: 1 / -1;">
+                  <label style="display: block; font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 8px;">
+                    <i class="fa-brands fa-youtube text-red" style="margin-right: 6px;"></i> Target Channel URL ya Handle:
+                  </label>
+                  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <div style="position: relative; flex: 1; min-width: 280px;">
+                      <i class="fa-solid fa-at" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 15px;"></i>
+                      <input type="text" id="shortsTargetUrlInput" class="form-control" placeholder="https://www.youtube.com/@TargetCreator ya @CreatorName" style="width: 100%; padding-left: 40px; height: 46px; font-size: 14px; background: rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.15); color: #fff; border-radius: var(--radius-md);" />
+                    </div>
+                    <button type="button" class="btn btn-secondary" id="btnScanTargetShorts" style="padding: 0 20px; height: 46px; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                      <i class="fa-solid fa-magnifying-glass"></i> Scan Top Shorts
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btnRunSyncNow" style="background: linear-gradient(135deg, #ef4444, #dc2626); border: none; padding: 0 24px; height: 46px; display: flex; align-items: center; gap: 8px; font-weight: 700; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">
+                      <i class="fa-solid fa-bolt"></i> Upload #1 Top Short Now
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Settings Row -->
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; background: rgba(0,0,0,0.25); padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.06); width: 100%; grid-column: 1 / -1;">
+                  <!-- Daily Auto Pilot Toggle -->
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <label class="switch" style="position: relative; display: inline-block; width: 44px; height: 24px; margin: 0;">
+                      <input type="checkbox" id="shortsAutoPilotToggle" />
+                      <span class="slider round" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .3s; border-radius: 24px;"></span>
+                    </label>
+                    <span style="font-size: 13px; font-weight: 600; color: #fff;">Daily Auto-Pilot</span>
+                  </div>
+
+                  <!-- Daily Sync Time -->
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 12px; color: var(--text-muted);">Daily Time:</span>
+                    <select id="shortsSyncHourSelect" class="form-control" style="width: auto; padding: 4px 10px; height: 34px; font-size: 13px; background: rgba(15,23,42,0.8); color: #fff; border-color: rgba(255,255,255,0.15);">
+                      <option value="12">12:00 PM</option>
+                      <option value="15">03:00 PM</option>
+                      <option value="18" selected>06:00 PM</option>
+                      <option value="20">08:00 PM</option>
+                      <option value="22">10:00 PM</option>
+                    </select>
+                  </div>
+
+                  <!-- Privacy Status -->
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 12px; color: var(--text-muted);">Upload As:</span>
+                    <select id="shortsPrivacySelect" class="form-control" style="width: auto; padding: 4px 10px; height: 34px; font-size: 13px; background: rgba(15,23,42,0.8); color: #fff; border-color: rgba(255,255,255,0.15);">
+                      <option value="public" selected>Public (Direct Live)</option>
+                      <option value="unlisted">Unlisted (Review First)</option>
+                      <option value="private">Private</option>
+                    </select>
+                  </div>
+
+                  <!-- Append #Shorts -->
+                  <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                    <input type="checkbox" id="shortsAppendTag" checked style="accent-color: #ef4444; width: 16px; height: 16px;" />
+                    <span style="font-size: 12px; color: #cbd5e1;">Append #Shorts Tag</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Live Sync Progress Banner (Hidden by default) -->
+              <div id="shortsSyncProgressBox" style="display: none; margin-bottom: 20px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: var(--radius-md); padding: 16px 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="spinner-border" style="width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #ef4444; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                    <div>
+                      <h4 id="shortsSyncProgressTitle" style="font-size: 14px; font-weight: 700; color: #fff; margin: 0 0 2px 0;">Processing Sync...</h4>
+                      <span id="shortsSyncProgressMsg" style="font-size: 12px; color: var(--text-muted);">Please wait while yt-dlp fetches and uploads.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Scanned Top Shorts Queue -->
+              <div id="shortsScannedQueueBox" style="display: none; margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <h4 style="font-size: 15px; font-weight: 700; color: #fff; margin: 0;">
+                    <i class="fa-solid fa-fire text-amber" style="margin-right: 6px;"></i> Scanned Shorts (Sorted by Highest Views)
+                  </h4>
+                  <span id="shortsScanCountBadge" style="font-size: 12px; color: var(--text-muted);">0 Shorts Found</span>
+                </div>
+                <div class="table-responsive" style="max-height: 380px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.08);">
+                  <table class="table" style="width: 100%; margin: 0; font-size: 13px;">
+                    <thead>
+                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); text-align: left;">
+                        <th style="padding: 10px 14px; width: 60px;">Rank</th>
+                        <th style="padding: 10px 14px; width: 100px;">Preview</th>
+                        <th style="padding: 10px 14px;">Short Title</th>
+                        <th style="padding: 10px 14px; width: 120px;">Views</th>
+                        <th style="padding: 10px 14px; width: 140px; text-align: center;">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="shortsScannedTableBody">
+                      <!-- Populated via JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Cloned History Ledger Table -->
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <h4 style="font-size: 15px; font-weight: 700; color: #fff; margin: 0;">
+                    <i class="fa-solid fa-clock-rotate-left text-blue" style="margin-right: 6px;"></i> Cloned & Uploaded History
+                  </h4>
+                  <button type="button" class="btn btn-sm btn-secondary" id="btnRefreshShortsHistory" style="font-size: 11px; padding: 4px 10px;">
+                    <i class="fa-solid fa-rotate-right"></i> Refresh
+                  </button>
+                </div>
+                <div class="table-responsive" style="background: rgba(0,0,0,0.3); border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.08);">
+                  <table class="table" style="width: 100%; margin: 0; font-size: 13px;">
+                    <thead>
+                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); text-align: left;">
+                        <th style="padding: 10px 14px;">Date</th>
+                        <th style="padding: 10px 14px;">Source Short</th>
+                        <th style="padding: 10px 14px;">Original Views</th>
+                        <th style="padding: 10px 14px;">Uploaded Short (Live Link)</th>
+                        <th style="padding: 10px 14px; text-align: center;">Privacy</th>
+                        <th style="padding: 10px 14px; text-align: center;">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="shortsHistoryTableBody">
+                      <tr>
+                        <td colspan="6" style="text-align: center; padding: 25px; color: var(--text-muted);">
+                          No shorts cloned yet. Paste a target channel URL above and click "Upload #1 Top Short Now".
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
@@ -3440,309 +3684,7 @@
           </div>
 
         </section>
-
-        <!-- ======================================================== -->
-        <!-- AI VIDEO COMMENTS AUTO-RESPONDER TAB -->
-        <!-- ======================================================== -->
-        <section id="tab-comment-responder" class="tab-pane">
-          
-          <!-- Top Hero / Stats Grid -->
-          <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
-            <div class="stat-card">
-              <div class="stat-icon icon-emerald">
-                <i class="fa-solid fa-power-off"></i>
-              </div>
-              <div class="stat-details">
-                <span class="stat-label">Automation Engine</span>
-                <h3 class="stat-value" id="crStatStatus">Disabled</h3>
-                <span class="stat-trend" id="crStatStatusSub"><i class="fa-solid fa-circle"></i> Service Idle</span>
-              </div>
-            </div>
-
-            <div class="stat-card">
-              <div class="stat-icon icon-purple">
-                <i class="fa-solid fa-reply-all"></i>
-              </div>
-              <div class="stat-details">
-                <span class="stat-label">Replied Today</span>
-                <h3 class="stat-value" id="crStatToday">0</h3>
-                <span class="stat-trend"><i class="fa-solid fa-calendar-day"></i> Daily Quota Protected</span>
-              </div>
-            </div>
-
-            <div class="stat-card">
-              <div class="stat-icon icon-cyan">
-                <i class="fa-solid fa-comments"></i>
-              </div>
-              <div class="stat-details">
-                <span class="stat-label">Total Comments Replied</span>
-                <h3 class="stat-value" id="crStatTotal">0</h3>
-                <span class="stat-trend"><i class="fa-solid fa-bolt"></i> AI Generated</span>
-              </div>
-            </div>
-
-            <div class="stat-card">
-              <div class="stat-icon icon-amber">
-                <i class="fa-solid fa-robot"></i>
-              </div>
-              <div class="stat-details">
-                <span class="stat-label">Active Persona</span>
-                <h3 class="stat-value" id="crStatPersona" style="font-size: 1.25rem;">Gamer Hype</h3>
-                <span class="stat-trend"><i class="fa-solid fa-brain"></i> Gemini 2.5 Flash</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Main Control & Settings Layout -->
-          <div style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; margin-bottom: 24px;">
-            
-            <!-- Left: Settings & Controls Card -->
-            <div class="glass-card">
-              <div class="card-header" style="justify-content: space-between;">
-                <div class="title-with-badge">
-                  <i class="fa-solid fa-sliders text-cyan"></i>
-                  <h3>Auto-Responder Settings</h3>
-                  <span class="badge badge-purple">AI Powered</span>
-                </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                  <span class="live-status-pill offline" id="crLiveStatusPill">
-                    <span class="dot"></span>
-                    <span id="crLiveStatusText">Stopped</span>
-                  </span>
-                </div>
-              </div>
-
-              <div class="card-body">
-                <form id="commentResponderSettingsForm">
-                  
-                  <!-- Main Toggle Switch -->
-                  <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); margin-bottom: 20px;">
-                    <div>
-                      <h4 style="margin: 0 0 4px 0; color: #fff; font-size: 15px;">Enable Auto-Reply Engine</h4>
-                      <p style="margin: 0; font-size: 12px; color: var(--text-muted);">Automatically scans channel videos/Shorts and posts Gemini AI replies</p>
-                    </div>
-                    <label class="switch" style="position: relative; display: inline-block; width: 48px; height: 26px;">
-                      <input type="checkbox" id="crEnabledToggle" style="opacity: 0; width: 0; height: 0;">
-                      <span class="slider round" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .3s; border-radius: 26px;"></span>
-                    </label>
-                  </div>
-
-                  <!-- Polling Interval & Daily Limits -->
-                  <div class="form-row" style="margin-bottom: 16px;">
-                    <div class="form-group" style="flex: 1;">
-                      <label style="font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; display: block;">
-                        <i class="fa-solid fa-clock-rotate-left"></i> Check Frequency (Interval):
-                      </label>
-                      <select id="crCheckInterval" class="form-control" style="width: 100%; padding: 10px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;">
-                        <option value="30">Every 30 Seconds (Fast)</option>
-                        <option value="60" selected>Every 1 Minute (Recommended)</option>
-                        <option value="120">Every 2 Minutes (Quota Friendly)</option>
-                        <option value="300">Every 5 Minutes</option>
-                      </select>
-                    </div>
-
-                    <div class="form-group" style="flex: 1;">
-                      <label style="font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; display: block;">
-                        <i class="fa-solid fa-shield-halved"></i> Max Daily Replies Limit:
-                      </label>
-                      <input type="number" id="crMaxDailyReplies" min="5" max="500" value="100" class="form-control" style="width: 100%; padding: 10px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;" />
-                    </div>
-                  </div>
-
-                  <!-- Tone / Persona Selector -->
-                  <div class="form-group" style="margin-bottom: 16px;">
-                    <label style="font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; display: block;">
-                      <i class="fa-solid fa-wand-magic-sparkles"></i> AI Tone & Persona:
-                    </label>
-                    <select id="crPersonaSelect" class="form-control" style="width: 100%; padding: 10px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;">
-                      <option value="friendly_gamer" selected>🎮 Friendly Gamer (Hinglish/Hindi Hype + Creator Vibe)</option>
-                      <option value="professional">💼 Professional & Appreciative (Polite, clear & warm)</option>
-                      <option value="funny">😂 Witty & Humorous (Playful, humorous & fun)</option>
-                      <option value="custom">✏️ Custom Persona & Prompt</option>
-                    </select>
-                  </div>
-
-                  <!-- Custom Prompt Field -->
-                  <div class="form-group" id="crCustomPromptWrap" style="margin-bottom: 16px; display: none;">
-                    <label style="font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; display: block;">
-                      Custom Instructions / Persona Prompt:
-                    </label>
-                    <textarea id="crCustomPrompt" rows="3" placeholder="e.g. Always mention 'MOHIT ARMY' and keep replies under 2 sentences in natural Hindi/English..." style="width: 100%; padding: 10px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;"></textarea>
-                  </div>
-
-                  <!-- Video Targeting Scope -->
-                  <div class="form-group" style="margin-bottom: 16px;">
-                    <label style="font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; display: block;">
-                      <i class="fa-solid fa-video"></i> Target Videos:
-                    </label>
-                    <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 10px;">
-                      <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #e2e8f0; cursor: pointer;">
-                        <input type="radio" name="crTargetScope" value="all" checked id="crTargetAll">
-                        <span>All Channel Videos & Shorts</span>
-                      </label>
-                      <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #e2e8f0; cursor: pointer;">
-                        <input type="radio" name="crTargetScope" value="specific" id="crTargetSpecific">
-                        <span>Specific Video Only</span>
-                      </label>
-                    </div>
-                    <div id="crSpecificVideoWrap" style="display: none;">
-                      <input type="text" id="crSpecificVideoId" placeholder="Enter Video ID (e.g. dQw4w9WgXcQ) or YouTube URL" style="width: 100%; padding: 10px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;" />
-                    </div>
-                  </div>
-
-                  <!-- Safety & Quality Checkboxes -->
-                  <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 14px; background: rgba(15,23,42,0.5); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #cbd5e1; cursor: pointer;">
-                      <input type="checkbox" id="crFilterSpam" checked>
-                      <span>Filter & skip abusive/profanity comments (using Auto-Moderation blocklist)</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #cbd5e1; cursor: pointer;">
-                      <input type="checkbox" id="crIgnoreOwn" checked>
-                      <span>Skip channel owner's own comments</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #cbd5e1; cursor: pointer;">
-                      <input type="checkbox" id="crMinLengthCheck" checked>
-                      <span>Skip single-letter / empty spam (Minimum 2 characters)</span>
-                    </label>
-                  </div>
-
-                  <!-- Save Button & Trigger Row -->
-                  <div style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;">
-                    <button type="button" class="btn btn-secondary" id="crRunNowBtn" style="display: flex; align-items: center; gap: 8px;">
-                      <i class="fa-solid fa-play" id="crRunNowIcon"></i>
-                      <span>Scan & Reply Now</span>
-                    </button>
-                    <button type="submit" class="btn btn-primary" id="crSaveSettingsBtn" style="display: flex; align-items: center; gap: 8px;">
-                      <i class="fa-solid fa-floppy-disk"></i>
-                      <span>Save Settings</span>
-                    </button>
-                  </div>
-
-                </form>
-              </div>
-            </div>
-
-            <!-- Right: Instructions & Tips Box -->
-            <div style="display: flex; flex-direction: column; gap: 20px;">
-              <div class="glass-card">
-                <div class="card-header">
-                  <div class="title-with-badge">
-                    <i class="fa-solid fa-sparkles text-purple"></i>
-                    <h3>How AI Auto-Reply Works</h3>
-                  </div>
-                </div>
-                <div class="card-body" style="font-size: 13px; color: #cbd5e1; line-height: 1.6;">
-                  <div style="display: flex; flex-direction: column; gap: 14px;">
-                    <div style="display: flex; gap: 12px; align-items: flex-start;">
-                      <span style="background: rgba(16,185,129,0.2); color: #34d399; font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">1</span>
-                      <div>
-                        <strong style="color: #fff;">Automatic Comment Polling:</strong>
-                        <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">The engine detects new comments published on your videos in real-time.</p>
-                      </div>
-                    </div>
-
-                    <div style="display: flex; gap: 12px; align-items: flex-start;">
-                      <span style="background: rgba(99,102,241,0.2); color: #818cf8; font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">2</span>
-                      <div>
-                        <strong style="color: #fff;">Smart Gemini AI Response:</strong>
-                        <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">Reads the viewer's question or compliment and crafts a natural, personalized creator reply in natural Hinglish/Hindi.</p>
-                      </div>
-                    </div>
-
-                    <div style="display: flex; gap: 12px; align-items: flex-start;">
-                      <span style="background: rgba(236,72,153,0.2); color: #f472b6; font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">3</span>
-                      <div>
-                        <strong style="color: #fff;">Zero Duplicate Spam:</strong>
-                        <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">Database securely tracks all replied comment IDs so no comment is ever replied to more than once.</p>
-                      </div>
-                    </div>
-
-                    <div style="display: flex; gap: 12px; align-items: flex-start;">
-                      <span style="background: rgba(245,158,11,0.2); color: #fbbf24; font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">4</span>
-                      <div>
-                        <strong style="color: #fff;">Quota & Rate Safety:</strong>
-                        <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">Automatic daily limits safeguard your YouTube Data API free quota.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Quick Status Summary Card -->
-              <div class="glass-card">
-                <div class="card-header">
-                  <div class="title-with-badge">
-                    <i class="fa-solid fa-circle-info text-cyan"></i>
-                    <h3>Service Status</h3>
-                  </div>
-                </div>
-                <div class="card-body" style="font-size: 13px; color: #cbd5e1;">
-                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-                    <span>Last Scan Time:</span>
-                    <strong id="crLastScanTimeText" style="color: var(--accent-cyan);">Never</strong>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-                    <span>Channel Connected:</span>
-                    <strong id="crChannelConnectedText" style="color: #34d399;">MOHIT-M07</strong>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                    <span>Gemini AI Engine:</span>
-                    <strong id="crGeminiStatusText" style="color: #38bdf8;">Gemini 2.5 Flash (Ready)</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Bottom: Live Activity & Replied Comments History Table -->
-          <div class="glass-card">
-            <div class="card-header" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-              <div class="title-with-badge">
-                <i class="fa-solid fa-list-check text-emerald"></i>
-                <div>
-                  <h3>Auto-Replied Comments Log</h3>
-                  <span style="font-size: 11.5px; color: var(--text-muted);">Real-time log of comments detected and replied by Gemini AI</span>
-                </div>
-              </div>
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <span class="badge badge-purple" id="crLogsCountBadge">0 Replies</span>
-                <button type="button" class="btn btn-sm btn-secondary" id="crRefreshLogsBtn">
-                  <i class="fa-solid fa-arrows-rotate"></i> Refresh
-                </button>
-                <button type="button" class="btn btn-sm btn-danger" id="crClearLogsBtn" style="background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3);">
-                  <i class="fa-solid fa-trash-can"></i> Clear
-                </button>
-              </div>
-            </div>
-            <div class="card-body" style="padding: 0;">
-              <div id="crLogsEmptyState" class="empty-state" style="padding: 40px; text-align: center;">
-                <i class="fa-solid fa-comments" style="font-size: 32px; color: var(--text-subtle); margin-bottom: 10px;"></i>
-                <p style="color: var(--text-muted); font-size: 13.5px; margin: 0;">No comments replied yet. Enable the engine or click "Scan & Reply Now" above!</p>
-              </div>
-
-              <div id="crLogsTableWrap" style="display: none; overflow-x: auto;">
-                <table class="data-table" style="width: 100%; border-collapse: collapse;">
-                  <thead>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(15, 23, 42, 0.6); text-align: left; font-size: 12px; color: var(--text-secondary);">
-                      <th style="padding: 12px 16px;">Viewer & Video</th>
-                      <th style="padding: 12px 16px;">Original Comment</th>
-                      <th style="padding: 12px 16px;">AI Generated Reply</th>
-                      <th style="padding: 12px 16px;">Time</th>
-                      <th style="padding: 12px 16px; text-align: right;">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody id="crLogsTableBody">
-                    <!-- Dynamically Populated Rows -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-        </section>
       </div>
-
 
 
       <!-- App Compliant Footer -->
@@ -3868,6 +3810,6 @@
 
   <!-- Socket.io & App JS -->
   <script src="/socket.io/socket.io.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=2.1"></script>
 </body>
 </html>

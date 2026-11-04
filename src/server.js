@@ -22,11 +22,10 @@ const aiResponderService = require('./services/aiResponderService');
 const analyticsService = require('./services/analyticsService');
 const geminiService = require('./services/geminiService');
 const videoDownloaderService = require('./services/videoDownloaderService');
+const shortsAutoSyncService = require('./services/shortsAutoSyncService');
 const youtubeService = require('./services/youtube');
 const multiStreamService = require('./services/multiStreamService');
-const commentAutoResponderService = require('./services/commentAutoResponderService');
 const config = require('./config');
-
 
 const app = express();
 app.set('trust proxy', 1);
@@ -47,10 +46,8 @@ soundboardService.setSocketIO(io);
 pollsService.setSocketIO(io);
 loyaltyService.setSocketIO(io);
 multiStreamService.setSocketIO(io);
+shortsAutoSyncService.setSocketIO(io);
 multiStreamService.init();
-commentAutoResponderService.setSocketIO(io);
-commentAutoResponderService.init();
-
 
 loyaltyService.setOnTimeoutCallback((timeoutMsg) => {
   if (botEngine.isRunning && auth.isAuthenticated() && botEngine.currentBroadcast?.liveChatId) {
@@ -60,6 +57,7 @@ loyaltyService.setOnTimeoutCallback((timeoutMsg) => {
 });
 highlightsService.setSocketIO(io);
 videoDownloaderService.setSocketIO(io);
+shortsAutoSyncService.setSocketIO(io);
 db.setQuotaChangeListener((quota) => {
   io.emit('quotaUpdated', quota);
 });
@@ -178,19 +176,39 @@ app.get('/auth/google', (req, res) => {
   }
 });
 
-// OAuth Callback handler
-app.get('/auth/google/callback', async (req, res) => {
+// OAuth Callback handler (Supports both /auth/google/callback and /api/auth/google/callback for Render/Custom Domains)
+const handleGoogleCallback = async (req, res) => {
   const code = req.query.code;
+  const state = req.query.state;
   if (!code) {
     return res.redirect('/?error=No+code+provided');
   }
 
   try {
+    if (state === 'shorts_destination') {
+      await shortsAutoSyncService.handleDestinationOAuthCallback(code, req);
+      return res.redirect('/#shorts-sync?connected=true');
+    }
     await auth.handleCallback(code, req);
     res.redirect('/?auth=success');
   } catch (err) {
     console.error('OAuth Callback error:', err);
+    if (state === 'shorts_destination') {
+      return res.redirect(`/#shorts-sync?error=${encodeURIComponent(err.message)}`);
+    }
     res.redirect(`/?error=${encodeURIComponent(err.message)}`);
+  }
+};
+app.get('/auth/google/callback', handleGoogleCallback);
+app.get('/api/auth/google/callback', handleGoogleCallback);
+
+// Dedicated OAuth redirect for Shorts Destination Channel
+app.get(['/auth/shorts-destination/login', '/api/auth/shorts-destination/login'], (req, res) => {
+  try {
+    const url = shortsAutoSyncService.getDestinationAuthUrl(req);
+    res.redirect(url);
+  } catch (err) {
+    res.status(500).send(`Auth error: ${err.message}`);
   }
 });
 
@@ -963,19 +981,19 @@ app.post('/api/analytics/video/:id/update-meta', async (req, res) => {
 });
 
 // -------------------------------------------------------------
-// YouTube Video Downloader Endpoints (Highest Possible Quality)
+// Ultra-HD Media Downloader Endpoints (YouTube & Instagram to MP4)
 // -------------------------------------------------------------
 
 app.post('/api/downloader/info', async (req, res) => {
   try {
     const { url } = req.body;
     if (!url) {
-      return res.status(400).json({ error: 'YouTube video URL is required' });
+      return res.status(400).json({ error: 'Media URL (YouTube or Instagram) is required' });
     }
     const info = await videoDownloaderService.getVideoInfo(url);
     res.json({ success: true, info });
   } catch (err) {
-    res.status(500).json({ error: err.message || 'Failed to inspect YouTube video' });
+    res.status(500).json({ error: err.message || 'Failed to inspect media URL' });
   }
 });
 
@@ -983,12 +1001,12 @@ app.post('/api/downloader/start', (req, res) => {
   try {
     const { url, quality } = req.body;
     if (!url) {
-      return res.status(400).json({ error: 'YouTube video URL is required' });
+      return res.status(400).json({ error: 'Media URL (YouTube or Instagram) is required' });
     }
     const download = videoDownloaderService.startDownload(url, quality || 'highest');
     res.json({ success: true, download });
   } catch (err) {
-    res.status(500).json({ error: err.message || 'Failed to start video download' });
+    res.status(500).json({ error: err.message || 'Failed to start media download' });
   }
 });
 
@@ -1085,6 +1103,78 @@ app.post('/api/downloader/open-folder', (req, res) => {
   try {
     videoDownloaderService.openDownloadsFolder();
     res.json({ success: true, path: videoDownloaderService.downloadsDir });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// Auto Shorts Cloner & YouTube Auto-Upload Endpoints
+// -------------------------------------------------------------
+
+app.get('/api/shorts-sync/settings', (req, res) => {
+  try {
+    const settings = shortsAutoSyncService.getSettings();
+    const destinationAccount = shortsAutoSyncService.getDestinationAccount();
+    res.json({ success: true, settings, destinationAccount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/shorts-sync/destination/disconnect', (req, res) => {
+  try {
+    shortsAutoSyncService.disconnectDestinationAccount();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/shorts-sync/settings', (req, res) => {
+  try {
+    const updated = shortsAutoSyncService.updateSettings(req.body);
+    res.json({ success: true, settings: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/shorts-sync/scan', async (req, res) => {
+  try {
+    const { channelUrl, limit } = req.body;
+    const target = channelUrl || shortsAutoSyncService.getSettings().targetChannelUrl;
+    if (!target) {
+      return res.status(400).json({ error: 'Target channel URL is required' });
+    }
+    const shorts = await shortsAutoSyncService.scanChannelShorts(target, limit || 25);
+    res.json({ success: true, target, shorts });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/shorts-sync/run', async (req, res) => {
+  try {
+    const { channelUrl } = req.body;
+    shortsAutoSyncService.runSyncPipeline(channelUrl)
+      .then(entry => {
+        io.emit('shortsSyncSuccess', entry);
+      })
+      .catch(err => {
+        io.emit('shortsSyncError', { error: err.message });
+      });
+
+    res.json({ success: true, message: 'Shorts sync process started in background.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/shorts-sync/history', (req, res) => {
+  try {
+    const history = shortsAutoSyncService.getHistory();
+    res.json({ success: true, history });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1316,86 +1406,6 @@ app.post('/api/multistream/test-message', (req, res) => {
 });
 
 // -------------------------------------------------------------
-// AI Video Comments Auto-Responder API Routes
-// -------------------------------------------------------------
-app.get('/api/comment-responder/status', (req, res) => {
-  try {
-    const status = commentAutoResponderService.getStatus();
-    const settings = db.getCommentResponderSettings();
-    res.json({ success: true, status, settings });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/comment-responder/settings', (req, res) => {
-  try {
-    const settings = db.getCommentResponderSettings();
-    res.json({ success: true, settings });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/comment-responder/settings', (req, res) => {
-  try {
-    const updated = db.updateCommentResponderSettings(req.body);
-    if (updated.enabled && !commentAutoResponderService.timer) {
-      commentAutoResponderService.start();
-    } else if (!updated.enabled && commentAutoResponderService.timer) {
-      commentAutoResponderService.stop();
-    }
-    commentAutoResponderService.broadcastStatus();
-    res.json({ success: true, settings: updated });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/comment-responder/toggle', async (req, res) => {
-  try {
-    const { enabled } = req.body;
-    const status = await commentAutoResponderService.toggle(enabled);
-    res.json({ success: true, status });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/comment-responder/run-now', async (req, res) => {
-  try {
-    if (!auth.isAuthenticated()) {
-      return res.status(401).json({ error: 'Please connect your YouTube account first.' });
-    }
-    if (!geminiService.getApiKey()) {
-      return res.status(400).json({ error: 'Please set your Gemini API Key in Settings first.' });
-    }
-    const result = await commentAutoResponderService.processNewComments();
-    res.json({ success: true, result, status: commentAutoResponderService.getStatus() });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/comment-responder/logs', (req, res) => {
-  try {
-    const logs = db.getCommentReplyLogs();
-    res.json({ success: true, logs });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.delete('/api/comment-responder/logs', (req, res) => {
-  try {
-    db.clearCommentReplyLogs();
-    res.json({ success: true, message: 'Logs cleared.' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// -------------------------------------------------------------
 // WebSocket Realtime Events
 // -------------------------------------------------------------
 
@@ -1408,18 +1418,9 @@ io.on('connection', (socket) => {
     logs: db.getLogs(30)
   });
 
-  // Comment Auto-Responder status
-  socket.emit('commentResponderStatus', commentAutoResponderService.getStatus());
-
   // Multi-Stream Overlay Socket Events
   socket.emit('multiChat:config', db.getMultiStreamConfig());
   multiStreamService.broadcastStreamStatuses();
-
-  socket.on('commentResponder:toggle', async (data) => {
-    const status = await commentAutoResponderService.toggle(data?.enabled);
-    io.emit('commentResponderStatus', status);
-  });
-
 
   socket.on('multiChat:getStreams', () => {
     multiStreamService.broadcastStreamStatuses();

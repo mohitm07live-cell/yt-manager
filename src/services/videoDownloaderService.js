@@ -4,7 +4,6 @@ const { spawn, exec, execSync } = require('child_process');
 
 class VideoDownloaderService {
   constructor() {
-    this.pythonPath = this.resolvePythonPath();
     this.downloadsDir = process.env.DOWNLOADS_DIR || path.join(process.cwd(), 'downloads');
     this.activeDownloads = new Map();
     this.io = null;
@@ -14,6 +13,62 @@ class VideoDownloaderService {
         fs.mkdirSync(this.downloadsDir, { recursive: true });
       } catch (e) {}
     }
+  }
+
+  /**
+   * Resolve best working yt-dlp binary (WinGet standalone executable, workspace bin, or system PATH)
+   */
+  resolveYtDlpBinary() {
+    // 1. Explicit env variable
+    if (process.env.YTDLP_PATH && fs.existsSync(process.env.YTDLP_PATH)) {
+      return { cmd: process.env.YTDLP_PATH, isPythonModule: false };
+    }
+
+    if (process.platform === 'win32') {
+      const candidates = [
+        'C:\\Users\\mohit\\AppData\\Local\\Microsoft\\WinGet\\Links\\yt-dlp.exe',
+        path.join(process.cwd(), 'bin', 'yt-dlp.exe'),
+        path.join(process.cwd(), 'bin', 'yt-dlp', 'yt-dlp.exe'),
+        'C:\\ProgramData\\chocolatey\\bin\\yt-dlp.exe'
+      ];
+
+      for (const p of candidates) {
+        if (fs.existsSync(p)) {
+          return { cmd: p, isPythonModule: false };
+        }
+      }
+
+      // 2. Query where.exe in system PATH
+      try {
+        const out = execSync('where.exe yt-dlp', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] });
+        const firstLine = out.trim().split(/\r?\n/)[0];
+        if (firstLine && fs.existsSync(firstLine)) {
+          return { cmd: firstLine, isPythonModule: false };
+        }
+      } catch (e) {}
+    } else {
+      // Linux / Docker / Render paths
+      const linuxCandidates = [
+        path.join(process.cwd(), 'bin', 'yt-dlp'),
+        '/usr/local/bin/yt-dlp',
+        '/usr/bin/yt-dlp'
+      ];
+      for (const p of linuxCandidates) {
+        if (fs.existsSync(p)) {
+          return { cmd: p, isPythonModule: false };
+        }
+      }
+      try {
+        const out = execSync('which yt-dlp', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+        if (out && fs.existsSync(out)) {
+          return { cmd: out, isPythonModule: false };
+        }
+      } catch (e) {}
+    }
+
+    // 3. Fallback to python -m yt_dlp if standalone binary is not found
+    const py = this.resolvePythonPath();
+    return { cmd: py, isPythonModule: true };
   }
 
   resolvePythonPath() {
@@ -55,11 +110,15 @@ class VideoDownloaderService {
       return directBin;
     }
 
-    // 2. Candidate paths
+    // 2. Candidate paths (standard Program Files and WinGet)
     const candidateDirs = [
+      'C:\\Program Files\\FFmpeg\\bin',
+      'C:\\Program Files\\FFmpeg',
+      'C:\\Program Files\\FFmpeg 8\\bin',
+      'C:\\Program Files\\FFmpeg 8',
+      'C:\\Users\\mohit\\AppData\\Local\\Microsoft\\WinGet\\Links',
       'C:\\Users\\mohit\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\ffmpeg-9.0.1-full_build\\bin',
       'C:\\Users\\mohit\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Gyan.FFmpeg.Essentials_Microsoft.Winget.Source_8wekyb3d8bbwe\\ffmpeg-8.1.1-essentials_build\\bin',
-      'C:\\Users\\mohit\\AppData\\Local\\Microsoft\\WinGet\\Links',
       path.join(__dirname, '../../bin/ffmpeg'),
       path.join(__dirname, '../../bin')
     ];
@@ -112,18 +171,78 @@ class VideoDownloaderService {
   }
 
   /**
-   * Fetch video info and available quality formats
+   * Identify platform from URL
+   */
+  detectPlatform(url) {
+    if (!url) return 'generic';
+    if (/instagram\.com/i.test(url)) return 'instagram';
+    if (/youtube\.com|youtu\.be/i.test(url)) return 'youtube';
+    return 'generic';
+  }
+
+  /**
+   * Extract video or reel ID / shortcode
+   */
+  extractMediaId(url) {
+    if (!url) return null;
+    // Instagram Reel / Post / TV / Share: e.g. /reel/DfQCqMnhpsG/ or /p/DfPQchkG1tg/
+    const igMatch = url.match(/(?:instagram\.com\/(?:[a-zA-Z0-9_.]+\/)?(?:reel|reels|p|tv|share\/reel)\/([a-zA-Z0-9_-]+))/i);
+    if (igMatch) return igMatch[1];
+
+    // YouTube 11-char ID
+    const ytMatch = url.match(/(?:v=|\/shorts\/|youtu\.be\/|embed\/|v\/)([a-zA-Z0-9_-]{11})/i);
+    if (ytMatch) return ytMatch[1];
+
+    return null;
+  }
+
+  /**
+   * Look for optional cookies file for Instagram/YouTube authentication if provided
+   */
+  getCookiesArgument() {
+    const candidateFiles = [
+      path.join(process.cwd(), 'cookies.txt'),
+      path.join(process.cwd(), 'instagram_cookies.txt'),
+      path.join(this.downloadsDir, 'cookies.txt')
+    ];
+    for (const f of candidateFiles) {
+      if (fs.existsSync(f)) {
+        return ['--cookies', f];
+      }
+    }
+    return [];
+  }
+
+  /**
+   * Fetch video/reel info and available quality formats
    */
   async getVideoInfo(url) {
     return new Promise((resolve, reject) => {
-      const args = [
-        '-m', 'yt_dlp',
+      const { cmd, isPythonModule } = this.resolveYtDlpBinary();
+      const platform = this.detectPlatform(url);
+      const args = isPythonModule ? ['-m', 'yt_dlp'] : [];
+
+      args.push(
         '--dump-single-json',
         '--no-playlist',
-        url
-      ];
+        '--no-warnings'
+      );
 
-      const child = spawn(this.pythonPath, args);
+      // Add platform specific headers
+      if (platform === 'instagram') {
+        args.push('--add-header', 'Referer:https://www.instagram.com/');
+        args.push('--add-header', 'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36');
+      }
+
+      // Add cookies if available
+      const cookieArgs = this.getCookiesArgument();
+      if (cookieArgs.length > 0) {
+        args.push(...cookieArgs);
+      }
+
+      args.push(url);
+
+      const child = spawn(cmd, args);
       let stdout = '';
       let stderr = '';
 
@@ -136,41 +255,74 @@ class VideoDownloaderService {
       });
 
       child.on('close', (code) => {
-        if (code !== 0) {
-          return reject(new Error(stderr || 'Failed to fetch video information'));
+        if (code !== 0 && !stdout.trim()) {
+          const errClean = stderr.replace(/WARNING:.*\n?/g, '').trim() || 'Failed to inspect media URL';
+          return reject(new Error(errClean));
         }
 
         try {
           const info = JSON.parse(stdout);
-          
-          // Determine available resolutions
-          const formats = info.formats || [];
-          const videoHeights = new Set();
+          let target = info;
+
+          // For carousels or multi-entries, pick the main video entry
+          if (info._type === 'playlist' && Array.isArray(info.entries)) {
+            target = info.entries.find(e => e && e.formats && e.formats.length > 0) || info.entries[0] || info;
+          }
+
+          // Determine available resolutions (accounting for vertical video resolutions 1080x1920 etc.)
+          const formats = target.formats || [];
+          const resolutionsSet = new Set();
+
           formats.forEach(f => {
-            if (f.vcodec && f.vcodec !== 'none' && f.height) {
-              videoHeights.add(f.height);
+            const h = f.height || 0;
+            const w = f.width || 0;
+            if (f.vcodec && f.vcodec !== 'none') {
+              if (h >= 2160 || w >= 3840) resolutionsSet.add('4K');
+              else if (h >= 1440 || w >= 2560) resolutionsSet.add('1440p');
+              else if (h >= 1080 || w >= 1080) resolutionsSet.add('1080p');
+              else if (h >= 720 || w >= 720) resolutionsSet.add('720p');
+              else if (h >= 480 || w >= 480) resolutionsSet.add('480p');
+              else if (h >= 360 || w >= 360) resolutionsSet.add('360p');
             }
           });
 
-          const sortedHeights = Array.from(videoHeights).sort((a, b) => b - a);
+          // Order resolutions highest to lowest
+          const order = ['4K', '1440p', '1080p', '720p', '480p', '360p'];
+          const availableResolutions = order.filter(r => resolutionsSet.has(r));
+          if (availableResolutions.length === 0) {
+            availableResolutions.push('1080p', '720p');
+          }
+
+          const maxResolution = availableResolutions[0] || '1080p Full HD';
+          const mediaId = target.id || this.extractMediaId(url) || 'media';
+
+          let creator = target.uploader || target.channel || target.uploader_id;
+          if (!creator) {
+            creator = platform === 'instagram' ? 'Instagram Creator' : 'YouTube Channel';
+          }
+          if (platform === 'instagram' && !creator.startsWith('@') && !creator.includes(' ')) {
+            creator = '@' + creator;
+          }
 
           const result = {
-            id: info.id,
-            title: info.title,
-            channel: info.uploader || info.channel || 'Unknown Channel',
-            channelUrl: info.uploader_url || '',
-            duration: info.duration,
-            durationString: this.formatDuration(info.duration),
-            thumbnail: info.thumbnail,
-            viewCount: info.view_count,
-            availableResolutions: sortedHeights,
-            maxResolution: sortedHeights.length > 0 ? `${sortedHeights[0]}p` : 'Best Available',
-            webpageUrl: info.webpage_url || url
+            id: mediaId,
+            title: target.title || (platform === 'instagram' ? `Instagram Reel [${mediaId}]` : 'Downloaded Video'),
+            channel: creator,
+            channelUrl: target.uploader_url || '',
+            duration: target.duration,
+            durationString: this.formatDuration(target.duration),
+            thumbnail: target.thumbnail || (Array.isArray(target.thumbnails) && target.thumbnails[target.thumbnails.length - 1]?.url) || '',
+            viewCount: target.view_count || target.like_count || 0,
+            likeCount: target.like_count || 0,
+            availableResolutions,
+            maxResolution,
+            platform,
+            webpageUrl: target.webpage_url || url
           };
 
           resolve(result);
         } catch (err) {
-          reject(new Error('Failed to parse video metadata: ' + err.message));
+          reject(new Error('Failed to parse media metadata: ' + err.message));
         }
       });
 
@@ -193,15 +345,14 @@ class VideoDownloaderService {
 
   /**
    * Start high quality download with guaranteed sound and MP4 merging
+   * Supports both YouTube videos and Instagram reels/posts
    */
   startDownload(url, quality = 'highest', customFilename = null) {
     const downloadId = 'dl_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     const outputTemplate = path.join(this.downloadsDir, '%(title).100s [%(id)s].%(ext)s');
     const ffmpegLocation = this.getFFmpegLocation();
-
-    // Extract video ID if possible
-    const videoIdMatch = url.match(/(?:v=|\/shorts\/|youtu\.be\/|embed\/|v\/)([a-zA-Z0-9_-]{11})/);
-    const vid = videoIdMatch ? videoIdMatch[1] : null;
+    const platform = this.detectPlatform(url);
+    const vid = this.extractMediaId(url);
 
     let formatSelection = 'bv*+ba/b';
     const isAudioOnly = quality === 'audio_only' || quality === 'mp3';
@@ -209,18 +360,28 @@ class VideoDownloaderService {
     if (isAudioOnly) {
       formatSelection = 'ba/b';
     } else if (quality === '1080p') {
-      formatSelection = 'bv*[height<=1080]+ba/b[height<=1080]/b';
+      if (platform === 'instagram') {
+        formatSelection = 'bv*[height<=1920][width<=1080]+ba/bv*[height<=1080]+ba/bv*+ba/b';
+      } else {
+        formatSelection = 'bv*[height<=1080]+ba/b[height<=1080]/b';
+      }
     } else if (quality === '720p') {
-      formatSelection = 'bv*[height<=720]+ba/b[height<=720]/b';
+      if (platform === 'instagram') {
+        formatSelection = 'bv*[height<=1280][width<=720]+ba/bv*[height<=720]+ba/b[height<=720]/b';
+      } else {
+        formatSelection = 'bv*[height<=720]+ba/b[height<=720]/b';
+      }
     } else if (quality === '480p') {
       formatSelection = 'bv*[height<=480]+ba/b[height<=480]/b';
     } else {
-      // Highest possible (4K/8K 60fps) + best audio
+      // Highest possible (4K/8K 60fps for YouTube, 1080p 60fps DASH for Instagram) + best audio
       formatSelection = 'bv*+ba/b';
     }
 
-    const args = [
-      '-m', 'yt_dlp',
+    const { cmd, isPythonModule } = this.resolveYtDlpBinary();
+    const args = isPythonModule ? ['-m', 'yt_dlp'] : [];
+
+    args.push(
       '--newline',
       '--no-playlist',
       '--progress',
@@ -228,7 +389,19 @@ class VideoDownloaderService {
       '--ffmpeg-location', ffmpegLocation,
       '-f', formatSelection,
       '-o', outputTemplate
-    ];
+    );
+
+    // Platform specific headers
+    if (platform === 'instagram') {
+      args.push('--add-header', 'Referer:https://www.instagram.com/');
+      args.push('--add-header', 'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36');
+    }
+
+    // Optional cookies
+    const cookieArgs = this.getCookiesArgument();
+    if (cookieArgs.length > 0) {
+      args.push(...cookieArgs);
+    }
 
     if (isAudioOnly) {
       args.push('--extract-audio', '--audio-format', 'mp3', '--audio-quality', '0');
@@ -238,19 +411,20 @@ class VideoDownloaderService {
 
     args.push(url);
 
-    const child = spawn(this.pythonPath, args);
+    const child = spawn(cmd, args);
 
     const downloadState = {
       id: downloadId,
       videoId: vid,
       url,
       quality,
+      platform,
       status: 'starting',
       progress: 0,
       speed: '0 KiB/s',
       eta: '--',
       size: '--',
-      title: 'Downloading video...',
+      title: platform === 'instagram' ? 'Downloading Instagram Reel...' : 'Downloading video...',
       filename: null,
       fullPath: null,
       downloadUrl: null,
@@ -302,7 +476,7 @@ class VideoDownloaderService {
       const destMatch = text.match(/\[download\] Destination: (.+)/i);
       if (destMatch && !destinationPath) {
         const potential = destMatch[1].trim();
-        if (!potential.match(/\.f\d+\./)) {
+        if (!potential.match(/\.f\d+\./) && !potential.match(/\.fdash-/)) {
           destinationPath = potential;
           downloadState.filename = path.basename(destinationPath);
           downloadState.fullPath = destinationPath;
@@ -335,7 +509,7 @@ class VideoDownloaderService {
     child.stderr.on('data', (data) => {
       const errText = data.toString();
       if (errText.includes('ERROR:')) {
-        downloadState.error = errText;
+        downloadState.error = errText.replace(/WARNING:.*\n?/g, '').trim();
       }
     });
 
@@ -364,21 +538,21 @@ class VideoDownloaderService {
 
     const files = fs.readdirSync(this.downloadsDir);
 
-    // 1. Look for finished merged file for this video ID
+    // 1. Look for finished merged file for this video/reel ID
     let finalMatch = null;
     if (vid) {
-      finalMatch = files.find(f => f.includes(`[${vid}]`) && !f.match(/\.f\d+\./) && (f.endsWith('.mp4') || f.endsWith('.mp3') || f.endsWith('.mkv') || f.endsWith('.webm')));
+      finalMatch = files.find(f => f.includes(`[${vid}]`) && !f.match(/\.f\d+\./) && !f.match(/\.fdash-/) && (f.endsWith('.mp4') || f.endsWith('.mp3') || f.endsWith('.mkv') || f.endsWith('.webm')));
     }
 
     // 2. Self-healing fallback: If no finished file, but video and audio fragments exist, merge them now!
     if (!finalMatch && vid) {
       const vidFiles = files.filter(f => f.includes(`[${vid}]`) && (f.includes('.f') || f.includes('.temp') || f.includes('.part')));
-      const audioFrag = vidFiles.find(f => f.endsWith('.m4a') || f.endsWith('.opus') || f.endsWith('.mp3') || f.includes('.f251.') || f.includes('.f140.') || f.includes('.f250.') || f.includes('.f249.'));
+      const audioFrag = vidFiles.find(f => f.endsWith('.m4a') || f.endsWith('.opus') || f.endsWith('.mp3') || f.includes('.f251.') || f.includes('.f140.') || f.includes('.f250.') || f.includes('.f249.') || f.includes('dash-') && f.endsWith('.m4a'));
       const videoFrag = vidFiles.find(f => f !== audioFrag && (f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv')));
 
       if (videoFrag && audioFrag) {
         const ffmpegExe = this.getFFmpegExe();
-        const baseTitle = videoFrag.replace(/\.f\d+\.(mp4|webm|m4a|mkv)$/i, '').replace(/\[.*\]/, '').trim() || 'Downloaded_Video';
+        const baseTitle = videoFrag.replace(/\.f[a-zA-Z0-9_-]+\.(mp4|webm|m4a|mkv)$/i, '').replace(/\[.*\]/, '').trim() || 'Downloaded_Media';
         const mergedName = `${baseTitle} [${vid}].mp4`;
         const mergedPath = path.join(this.downloadsDir, mergedName);
 
@@ -421,7 +595,7 @@ class VideoDownloaderService {
         downloadState.size = this.formatBytes(st.size);
       } catch (e) {}
 
-      // Clean up any lingering .f fragments, .part, .ytdl for this video ID
+      // Clean up any lingering fragments, .part, .ytdl for this video ID
       if (vid) {
         this.cleanFragmentsForVideo(vid, finalMatch);
       }
@@ -438,7 +612,7 @@ class VideoDownloaderService {
       const files = fs.readdirSync(this.downloadsDir);
       for (const f of files) {
         if (f !== keepFilename && f.includes(`[${vid}]`)) {
-          if (f.match(/\.f\d+\./) || f.endsWith('.part') || f.endsWith('.ytdl') || f.endsWith('.temp')) {
+          if (f.match(/\.f\d+\./) || f.match(/\.fdash-/) || f.endsWith('.part') || f.endsWith('.ytdl') || f.endsWith('.temp')) {
             try {
               fs.unlinkSync(path.join(this.downloadsDir, f));
             } catch (e) {}
@@ -498,10 +672,10 @@ class VideoDownloaderService {
       }
 
       // Match by Video ID [xxxxxxxxxxx]
-      const vidMatch = query.match(/\[([a-zA-Z0-9_-]{11})\]/) || decoded.match(/\[([a-zA-Z0-9_-]{11})\]/) || query.match(/([a-zA-Z0-9_-]{11})/);
+      const vidMatch = query.match(/\[([a-zA-Z0-9_-]{5,30})\]/) || decoded.match(/\[([a-zA-Z0-9_-]{5,30})\]/) || query.match(/([a-zA-Z0-9_-]{5,30})/);
       if (vidMatch) {
         const vid = vidMatch[1];
-        const mediaMatch = files.find(f => f.includes(`[${vid}]`) && !f.match(/\.f\d+\./) && /\.(mp4|mkv|webm|mp3|m4a)$/i.test(f));
+        const mediaMatch = files.find(f => f.includes(`[${vid}]`) && !f.match(/\.f\d+\./) && !f.match(/\.fdash-/) && /\.(mp4|mkv|webm|mp3|m4a)$/i.test(f));
         if (mediaMatch) {
           const p = path.join(this.downloadsDir, mediaMatch);
           if (fs.statSync(p).isFile()) return { filename: mediaMatch, fullPath: p };
@@ -523,7 +697,7 @@ class VideoDownloaderService {
       let latestMtime = 0;
 
       for (const f of files) {
-        if (f.match(/\.f\d+\./) || f.endsWith('.part') || f.endsWith('.ytdl') || f.endsWith('.temp')) continue;
+        if (f.match(/\.f\d+\./) || f.match(/\.fdash-/) || f.endsWith('.part') || f.endsWith('.ytdl') || f.endsWith('.temp')) continue;
         if (!/\.(mp4|mkv|webm|mp3|m4a|wav)$/i.test(f)) continue;
 
         const p = path.join(this.downloadsDir, f);
@@ -555,7 +729,7 @@ class VideoDownloaderService {
 
       for (const f of files) {
         // Exclude intermediate stream fragments and image/thumbnails
-        if (f.match(/\.f\d+\./) || f.endsWith('.part') || f.endsWith('.ytdl') || f.endsWith('.temp') || f.endsWith('.jpg') || f.endsWith('.png') || f.endsWith('.json')) {
+        if (f.match(/\.f\d+\./) || f.match(/\.fdash-/) || f.endsWith('.part') || f.endsWith('.ytdl') || f.endsWith('.temp') || f.endsWith('.jpg') || f.endsWith('.png') || f.endsWith('.json')) {
           continue;
         }
         if (!/\.(mp4|mkv|webm|mp3|m4a|wav)$/i.test(f)) continue;
@@ -564,8 +738,10 @@ class VideoDownloaderService {
         try {
           const st = fs.statSync(fullPath);
           if (st.isFile()) {
+            const isInstagram = f.toLowerCase().includes('instagram') || f.toLowerCase().includes('reel');
             results.push({
               filename: f,
+              platform: isInstagram ? 'instagram' : 'youtube',
               sizeBytes: st.size,
               sizeFormatted: this.formatBytes(st.size),
               createdAt: st.birthtime || st.mtime,

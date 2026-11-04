@@ -38,15 +38,13 @@ const tabMeta = {
   polls: { title: 'Live Chat Polls & Viewer Predictions', subtitle: 'Create interactive chat-driven polls with instant voting and OBS overlay' },
   loyalty: { title: 'Viewer Loyalty Points & Mini-Games', subtitle: 'Reward active chatters with points, slot spins, coin flips, and live trivia' },
   highlights: { title: 'Stream Moments & Clip Markers', subtitle: 'Timestamp stream highlights, clutch plays, and bookmark memorable stream moments' },
-  downloader: { title: 'YouTube Ultra-HD Video Downloader', subtitle: 'Download any YouTube Video, Short, or Stream in the Highest Possible Quality (Up to 4K / 8K) with FFmpeg audio merging' },
+  downloader: { title: 'YouTube & Instagram Ultra-HD Media Downloader', subtitle: 'Download any Instagram Reel, Post, Video or YouTube Video, Short in the Highest Possible Quality (1080p Full HD / 4K) with Lossless MP4 Audio Merging' },
   multistream: { title: 'Multi-Stream Live Chat Overlay', subtitle: 'Aggregate & view real-time comments from multiple YouTube channels on a transparent floating overlay window while gaming' },
   'live-feed': { title: 'Live Chat Feed & Logs', subtitle: 'Real-time feed of live chat messages and bot responses' },
-  'comment-responder': { title: 'AI Video Comments Auto-Responder', subtitle: 'Automate smart, instant Gemini AI replies to comments on your YouTube videos & Shorts' },
 
   simulator: { title: 'Test Simulator', subtitle: 'Sandbox environment to test commands and moderation offline' },
   settings: { title: 'Bot & API Settings', subtitle: 'Configure polling rate, credentials, and bot variables' }
 };
-
 
 // -------------------------------------------------------------
 // Navigation & Tab Switching
@@ -4006,10 +4004,11 @@ socket.on('pollEnded', () => { fetchActivePoll(); fetchPollHistory(); });
 socket.on('highlightAdded', () => { fetchHighlights(); });
 
 // -------------------------------------------------------------
-// YouTube Ultra-HD Video Downloader Module
+// YouTube & Instagram Ultra-HD Media Downloader Module
 // -------------------------------------------------------------
 let selectedDownloaderQuality = 'highest';
 let currentInspectedUrl = '';
+let activePlatformFilter = 'auto';
 
 function initVideoDownloader() {
   const urlInput = document.getElementById('downloaderUrlInput');
@@ -4021,6 +4020,69 @@ function initVideoDownloader() {
   const btnOpenFolderSec = document.getElementById('btnOpenFolderSecondary');
   const btnReveal = document.getElementById('btnRevealInFolder');
   const btnRefresh = document.getElementById('btnRefreshDownloadsList');
+  const inputIcon = document.getElementById('dlInputPlatformIcon');
+
+  // Platform Filter Tag Badges
+  const tagAuto = document.getElementById('dlPlatformTagAuto');
+  const tagInsta = document.getElementById('dlPlatformTagInsta');
+  const tagYt = document.getElementById('dlPlatformTagYt');
+
+  const updatePlatformTagStyles = (active) => {
+    activePlatformFilter = active;
+    if (tagAuto) {
+      tagAuto.style.background = active === 'auto' ? 'rgba(56, 189, 248, 0.3)' : 'rgba(56, 189, 248, 0.1)';
+      tagAuto.style.border = active === 'auto' ? '1px solid #38bdf8' : '1px solid rgba(56, 189, 248, 0.2)';
+    }
+    if (tagInsta) {
+      tagInsta.style.background = active === 'instagram' ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.4), rgba(139, 92, 246, 0.4))' : 'rgba(236, 72, 153, 0.1)';
+      tagInsta.style.border = active === 'instagram' ? '1px solid #ec4899' : '1px solid rgba(236, 72, 153, 0.2)';
+    }
+    if (tagYt) {
+      tagYt.style.background = active === 'youtube' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(239, 68, 68, 0.1)';
+      tagYt.style.border = active === 'youtube' ? '1px solid #ef4444' : '1px solid rgba(239, 68, 68, 0.2)';
+    }
+  };
+
+  tagAuto?.addEventListener('click', () => {
+    updatePlatformTagStyles('auto');
+    if (urlInput) urlInput.placeholder = 'https://www.instagram.com/reel/... or https://www.youtube.com/watch?v=...';
+  });
+
+  tagInsta?.addEventListener('click', () => {
+    updatePlatformTagStyles('instagram');
+    if (urlInput) {
+      urlInput.placeholder = 'Paste Instagram Reel or Post URL (e.g. https://www.instagram.com/reel/...)';
+      urlInput.focus();
+    }
+  });
+
+  tagYt?.addEventListener('click', () => {
+    updatePlatformTagStyles('youtube');
+    if (urlInput) {
+      urlInput.placeholder = 'Paste YouTube Video or Short URL (e.g. https://www.youtube.com/watch?v=...)';
+      urlInput.focus();
+    }
+  });
+
+  // Real-time URL Detection for Icon Morphing
+  const detectAndStyleInput = (val) => {
+    if (!inputIcon) return;
+    const trimmed = (val || '').trim().toLowerCase();
+    if (trimmed.includes('instagram.com')) {
+      inputIcon.className = 'fa-brands fa-instagram';
+      inputIcon.style.color = '#ec4899';
+    } else if (trimmed.includes('youtube.com') || trimmed.includes('youtu.be')) {
+      inputIcon.className = 'fa-brands fa-youtube';
+      inputIcon.style.color = '#ef4444';
+    } else {
+      inputIcon.className = 'fa-solid fa-link';
+      inputIcon.style.color = 'var(--text-muted)';
+    }
+  };
+
+  urlInput?.addEventListener('input', (e) => {
+    detectAndStyleInput(e.target.value);
+  });
 
   // Quality Selection Card Clicks
   document.querySelectorAll('.dl-quality-card').forEach(card => {
@@ -4037,6 +4099,7 @@ function initVideoDownloader() {
       const text = await navigator.clipboard.readText();
       if (text) {
         urlInput.value = text.trim();
+        detectAndStyleInput(text);
         showToast('Link pasted from clipboard!');
       }
     } catch (err) {
@@ -4052,7 +4115,7 @@ function initVideoDownloader() {
     }
   });
 
-  // Inspect / Analyze Video
+  // Inspect / Analyze Video or Reel
   btnInspect?.addEventListener('click', () => {
     inspectDownloaderVideo();
   });
@@ -4061,7 +4124,7 @@ function initVideoDownloader() {
   btnInstantHighest?.addEventListener('click', () => {
     const url = urlInput?.value?.trim();
     if (!url) {
-      showToast('Please enter or paste a YouTube URL first', true);
+      showToast('Please enter or paste an Instagram or YouTube URL first', true);
       return;
     }
     startVideoDownload(url, 'highest');
@@ -4071,7 +4134,7 @@ function initVideoDownloader() {
   btnStartChosen?.addEventListener('click', () => {
     const url = currentInspectedUrl || urlInput?.value?.trim();
     if (!url) {
-      showToast('Please enter a valid YouTube video URL', true);
+      showToast('Please enter a valid Instagram or YouTube URL', true);
       return;
     }
     startVideoDownload(url, selectedDownloaderQuality);
@@ -4110,7 +4173,7 @@ async function inspectDownloaderVideo() {
   const urlInput = document.getElementById('downloaderUrlInput');
   const url = urlInput?.value?.trim();
   if (!url) {
-    showToast('Please enter a YouTube video URL to analyze', true);
+    showToast('Please enter an Instagram or YouTube link to analyze', true);
     return;
   }
 
@@ -4128,30 +4191,72 @@ async function inspectDownloaderVideo() {
 
     const data = await res.json();
     if (!res.ok || !data.success) {
-      throw new Error(data.error || 'Failed to inspect YouTube video');
+      throw new Error(data.error || 'Failed to inspect media link');
     }
 
     const info = data.info;
     currentInspectedUrl = url;
+    const isInsta = info.platform === 'instagram';
 
     // Render Preview Box
-    document.getElementById('dlPreviewThumb').src = info.thumbnail || '';
-    document.getElementById('dlPreviewDuration').textContent = info.durationString || '0:00';
-    document.getElementById('dlPreviewTitle').textContent = info.title || 'YouTube Video';
-    document.getElementById('dlPreviewChannel').innerHTML = `<i class="fa-solid fa-user-circle"></i> ${escapeHtml(info.channel)}`;
-    document.getElementById('dlPreviewViews').innerHTML = `<i class="fa-solid fa-eye"></i> ${Number(info.viewCount || 0).toLocaleString()} views`;
+    const thumbEl = document.getElementById('dlPreviewThumb');
+    if (thumbEl) {
+      thumbEl.src = info.thumbnail || '';
+      thumbEl.onerror = () => {
+        thumbEl.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22280%22%20height%3D%22200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%231e293b%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%2394a3b8%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3EMedia%20Preview%3C%2Ftext%3E%3C%2Fsvg%3E';
+      };
+    }
 
-    const resList = (info.availableResolutions || []).map(r => `${r}p`).slice(0, 5).join(', ');
-    document.getElementById('dlPreviewResolutions').innerHTML = `<i class="fa-solid fa-film"></i> Available: ${resList || 'HD'}`;
+    const durEl = document.getElementById('dlPreviewDuration');
+    if (durEl) {
+      durEl.textContent = info.durationString && info.durationString !== '0:00' ? info.durationString : (isInsta ? 'REEL' : 'VIDEO');
+    }
+
+    const titleEl = document.getElementById('dlPreviewTitle');
+    if (titleEl) {
+      titleEl.textContent = info.title || (isInsta ? 'Instagram Reel' : 'Video');
+    }
+
+    const channelEl = document.getElementById('dlPreviewChannel');
+    if (channelEl) {
+      channelEl.innerHTML = isInsta
+        ? `<i class="fa-brands fa-instagram" style="color: #ec4899;"></i> ${escapeHtml(info.channel)}`
+        : `<i class="fa-solid fa-user-circle"></i> ${escapeHtml(info.channel)}`;
+    }
+
+    const viewsEl = document.getElementById('dlPreviewViews');
+    if (viewsEl) {
+      const count = Number(info.viewCount || info.likeCount || 0);
+      viewsEl.innerHTML = isInsta
+        ? `<i class="fa-solid fa-heart text-rose"></i> ${count.toLocaleString()} likes`
+        : `<i class="fa-solid fa-eye text-cyan"></i> ${count.toLocaleString()} views`;
+    }
+
+    const resList = (info.availableResolutions || []).join(', ');
+    const resEl = document.getElementById('dlPreviewResolutions');
+    if (resEl) {
+      resEl.innerHTML = `<i class="fa-solid fa-film"></i> Available: ${resList || '1080p, 720p'}`;
+    }
 
     const maxBadge = document.getElementById('dlPreviewMaxBadge');
     if (maxBadge) {
       maxBadge.textContent = `${info.maxResolution} AVAILABLE`;
+      maxBadge.style.background = isInsta ? 'linear-gradient(135deg, #ec4899, #8b5cf6)' : 'linear-gradient(135deg, #10b981, #06b6d4)';
+    }
+
+    const platformBadge = document.getElementById('dlPreviewPlatformBadge');
+    if (platformBadge) {
+      platformBadge.innerHTML = isInsta
+        ? '<i class="fa-brands fa-instagram"></i> INSTAGRAM'
+        : '<i class="fa-brands fa-youtube"></i> YOUTUBE';
+      platformBadge.style.background = isInsta
+        ? 'linear-gradient(135deg, #ec4899, #8b5cf6)'
+        : 'linear-gradient(135deg, #ef4444, #dc2626)';
     }
 
     const highestLabel = document.getElementById('dlHighestResLabel');
     if (highestLabel) {
-      highestLabel.textContent = `Auto Best (${info.maxResolution} + Lossless Audio)`;
+      highestLabel.textContent = `Auto Best (${info.maxResolution} + Merged Audio)`;
     }
 
     const previewBox = document.getElementById('downloaderPreviewBox');
@@ -4160,7 +4265,7 @@ async function inspectDownloaderVideo() {
       previewBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    showToast(`Video analyzed! Max Quality: ${info.maxResolution}`);
+    showToast(`🎉 ${isInsta ? 'Instagram Reel' : 'YouTube Video'} analyzed! Highest Quality: ${info.maxResolution}`);
   } catch (err) {
     showToast(err.message, true);
   } finally {
@@ -4176,13 +4281,15 @@ async function startVideoDownload(url, quality = 'highest') {
   const percentBadge = document.getElementById('dlPercentBadge');
   const barFill = document.getElementById('dlProgressBarFill');
 
+  const isInsta = url.toLowerCase().includes('instagram.com');
+
   if (completeBox) completeBox.style.display = 'none';
   if (progressBox) {
     progressBox.style.display = 'block';
     progressBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  if (statusText) statusText.textContent = `Starting download (${quality.toUpperCase()})...`;
+  if (statusText) statusText.textContent = `Starting ${isInsta ? 'Instagram' : 'YouTube'} download (${quality.toUpperCase()})...`;
   if (percentBadge) percentBadge.textContent = '0%';
   if (barFill) barFill.style.width = '0%';
 
@@ -4198,7 +4305,7 @@ async function startVideoDownload(url, quality = 'highest') {
       throw new Error(data.error || 'Failed to start download');
     }
 
-    showToast('Download started in background!');
+    showToast(`Download started! Fetching ${isInsta ? 'Instagram Reel' : 'Video'} in highest quality MP4...`);
   } catch (err) {
     if (statusText) statusText.textContent = 'Download error';
     showToast('Error starting download: ' + err.message, true);
@@ -4215,6 +4322,8 @@ function handleDownloaderProgress(data) {
   const sizeText = document.getElementById('dlSizeText');
   const etaText = document.getElementById('dlEtaText');
 
+  const isInsta = data.platform === 'instagram' || (data.url && data.url.includes('instagram.com'));
+
   if (progressBox && progressBox.style.display === 'none' && data.status !== 'completed') {
     progressBox.style.display = 'block';
   }
@@ -4228,7 +4337,7 @@ function handleDownloaderProgress(data) {
   if (barFill) barFill.style.width = `${pct}%`;
 
   if (data.status === 'processing') {
-    if (statusText) statusText.textContent = 'Merging video & audio streams with FFmpeg...';
+    if (statusText) statusText.textContent = `Merging ${isInsta ? 'Instagram' : 'video'} & audio streams into crystal-clear MP4...`;
   } else if (data.status === 'completed') {
     if (statusText) statusText.textContent = 'Download & Processing Complete!';
     if (barFill) barFill.style.width = '100%';
@@ -4244,20 +4353,20 @@ function handleDownloaderProgress(data) {
     const finishedSize = document.getElementById('dlFinishedSize');
     const downloadLink = document.getElementById('btnBrowserDownloadLink');
 
-    if (finishedName) finishedName.textContent = data.filename || 'Downloaded Video';
+    if (finishedName) finishedName.textContent = data.filename || 'Downloaded Media.mp4';
     if (finishedSize) finishedSize.textContent = data.size || '';
     if (downloadLink && data.filename) {
       downloadLink.href = `/api/downloader/file/${encodeURIComponent(data.filename)}`;
       downloadLink.setAttribute('download', data.filename);
     }
 
-    showToast('🎉 Video downloaded in highest quality!');
+    showToast(`🎉 ${isInsta ? 'Instagram Reel' : 'Video'} downloaded in highest quality MP4!`);
     fetchDownloadedFiles();
   } else if (data.status === 'error') {
     if (statusText) statusText.textContent = 'Download error occurred';
     showToast('Download Error: ' + (data.error || 'Unknown error'), true);
   } else {
-    if (statusText) statusText.textContent = `Downloading ${data.quality === 'audio_only' ? 'Audio' : 'Video'} (${pct}%)...`;
+    if (statusText) statusText.textContent = `Downloading ${isInsta ? 'Instagram Reel' : 'Video'} (${pct}%)...`;
   }
 }
 
@@ -4285,13 +4394,21 @@ async function fetchDownloadedFiles() {
     if (tableWrap) tableWrap.style.display = 'block';
 
     if (tbody) {
-      tbody.innerHTML = files.map((f, i) => {
+      tbody.innerHTML = files.map((f) => {
         const safeEncoded = encodeURIComponent(f.filename);
+        const isInsta = f.platform === 'instagram' || f.filename.toLowerCase().includes('instagram') || f.filename.toLowerCase().includes('reel');
+        const isAudio = f.filename.endsWith('.mp3');
+
+        const sourceBadge = isInsta
+          ? `<span class="badge" style="font-size: 10px; background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #fff; padding: 2px 7px;"><i class="fa-brands fa-instagram"></i> Insta</span>`
+          : `<span class="badge badge-red" style="font-size: 10px; padding: 2px 7px;"><i class="fa-brands fa-youtube"></i> YT</span>`;
+
         return `
         <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+          <td style="padding: 12px 14px; width: 80px;">${sourceBadge}</td>
           <td style="padding: 12px 14px; font-weight: 600; color: #f8fafc;">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <i class="${f.filename.endsWith('.mp3') ? 'fa-solid fa-file-audio text-rose' : 'fa-solid fa-file-video text-emerald'}" style="font-size: 18px;"></i>
+              <i class="${isAudio ? 'fa-solid fa-file-audio text-rose' : (isInsta ? 'fa-solid fa-film text-purple' : 'fa-solid fa-file-video text-emerald')}" style="font-size: 18px;"></i>
               <span style="word-break: break-all;">${escapeHtml(f.filename)}</span>
             </div>
           </td>
@@ -4299,7 +4416,7 @@ async function fetchDownloadedFiles() {
           <td style="padding: 12px 14px; color: var(--text-muted); font-size: 12px;">${new Date(f.createdAt).toLocaleString()}</td>
           <td style="padding: 12px 14px; text-align: right; white-space: nowrap;">
             <a href="/api/downloader/file/${safeEncoded}" download="${escapeHtml(f.filename)}" class="btn btn-primary btn-sm" style="background: #10b981; border: none; padding: 6px 14px; margin-right: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
-              <i class="fa-solid fa-download"></i> Save to PC
+              <i class="fa-solid fa-download"></i> Save MP4
             </a>
             <button type="button" class="btn btn-secondary btn-sm btn-delete-dl" data-filename="${safeEncoded}" title="Delete File" style="color: var(--accent-rose); padding: 6px 10px;">
               <i class="fa-solid fa-trash"></i>
@@ -4979,386 +5096,6 @@ async function deleteTtsHistoryFile(encodedFilename) {
 window.playTtsHistoryFile = playTtsHistoryFile;
 window.deleteTtsHistoryFile = deleteTtsHistoryFile;
 
-// =============================================================
-// AI Video Comments Auto-Responder Client Module
-// =============================================================
-
-let crSettings = {};
-let crLogs = [];
-
-function initCommentResponder() {
-  const form = document.getElementById('commentResponderSettingsForm');
-  const toggle = document.getElementById('crEnabledToggle');
-  const personaSelect = document.getElementById('crPersonaSelect');
-  const customPromptWrap = document.getElementById('crCustomPromptWrap');
-  const targetAll = document.getElementById('crTargetAll');
-  const targetSpecific = document.getElementById('crTargetSpecific');
-  const specificVideoWrap = document.getElementById('crSpecificVideoWrap');
-  const runNowBtn = document.getElementById('crRunNowBtn');
-  const refreshLogsBtn = document.getElementById('crRefreshLogsBtn');
-  const clearLogsBtn = document.getElementById('crClearLogsBtn');
-
-  if (personaSelect) {
-    personaSelect.addEventListener('change', () => {
-      if (customPromptWrap) {
-        customPromptWrap.style.display = personaSelect.value === 'custom' ? 'block' : 'none';
-      }
-    });
-  }
-
-  if (targetAll && targetSpecific && specificVideoWrap) {
-    targetAll.addEventListener('change', () => {
-      specificVideoWrap.style.display = targetSpecific.checked ? 'block' : 'none';
-    });
-    targetSpecific.addEventListener('change', () => {
-      specificVideoWrap.style.display = targetSpecific.checked ? 'block' : 'none';
-    });
-  }
-
-  if (toggle) {
-    toggle.addEventListener('change', async () => {
-      const enabled = toggle.checked;
-      try {
-        const res = await fetch('/api/comment-responder/toggle', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ enabled })
-        });
-        const data = await res.json();
-        if (data.success) {
-          updateCommentResponderStatusUI(data.status);
-          showToast(enabled ? 'AI Comments Auto-Responder Started!' : 'AI Comments Auto-Responder Paused');
-        }
-      } catch (err) {
-        showToast('Failed to toggle Comment Auto-Responder: ' + err.message, true);
-        toggle.checked = !enabled;
-      }
-    });
-  }
-
-  if (form) {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      await saveCommentResponderSettings();
-    });
-  }
-
-  if (runNowBtn) {
-    runNowBtn.addEventListener('click', runCommentResponderNow);
-  }
-
-  if (refreshLogsBtn) {
-    refreshLogsBtn.addEventListener('click', () => {
-      fetchCommentResponderLogs();
-      showToast('Comment reply logs refreshed');
-    });
-  }
-
-  if (clearLogsBtn) {
-    clearLogsBtn.addEventListener('click', async () => {
-      if (!confirm('Are you sure you want to clear all comment reply history?')) return;
-      try {
-        const res = await fetch('/api/comment-responder/logs', { method: 'DELETE' });
-        const data = await res.json();
-        if (data.success) {
-          crLogs = [];
-          renderCommentResponderLogs([]);
-          showToast('Comment reply logs cleared');
-        }
-      } catch (err) {
-        showToast('Failed to clear logs: ' + err.message, true);
-      }
-    });
-  }
-}
-
-async function fetchCommentResponderSettings() {
-  try {
-    const res = await fetch('/api/comment-responder/settings');
-    const data = await res.json();
-    if (data.success && data.settings) {
-      crSettings = data.settings;
-      populateCommentResponderUI(data.settings);
-    }
-    const statusRes = await fetch('/api/comment-responder/status');
-    const statusData = await statusRes.json();
-    if (statusData.success && statusData.status) {
-      updateCommentResponderStatusUI(statusData.status);
-    }
-  } catch (err) {
-    console.error('Error fetching comment responder settings:', err);
-  }
-}
-
-function populateCommentResponderUI(settings) {
-  const toggle = document.getElementById('crEnabledToggle');
-  const checkInterval = document.getElementById('crCheckInterval');
-  const maxDailyReplies = document.getElementById('crMaxDailyReplies');
-  const personaSelect = document.getElementById('crPersonaSelect');
-  const customPrompt = document.getElementById('crCustomPrompt');
-  const customPromptWrap = document.getElementById('crCustomPromptWrap');
-  const targetAll = document.getElementById('crTargetAll');
-  const targetSpecific = document.getElementById('crTargetSpecific');
-  const specificVideoWrap = document.getElementById('crSpecificVideoWrap');
-  const specificVideoId = document.getElementById('crSpecificVideoId');
-  const filterSpam = document.getElementById('crFilterSpam');
-  const ignoreOwn = document.getElementById('crIgnoreOwn');
-  const minLengthCheck = document.getElementById('crMinLengthCheck');
-
-  if (toggle) toggle.checked = Boolean(settings.enabled);
-  if (checkInterval) checkInterval.value = settings.checkIntervalSeconds || 60;
-  if (maxDailyReplies) maxDailyReplies.value = settings.maxDailyReplies || 100;
-  if (personaSelect) {
-    personaSelect.value = settings.persona || 'friendly_gamer';
-    if (customPromptWrap) {
-      customPromptWrap.style.display = settings.persona === 'custom' ? 'block' : 'none';
-    }
-  }
-  if (customPrompt) customPrompt.value = settings.customPrompt || '';
-
-  if (settings.specificVideoOnly) {
-    if (targetSpecific) targetSpecific.checked = true;
-    if (specificVideoWrap) specificVideoWrap.style.display = 'block';
-  } else {
-    if (targetAll) targetAll.checked = true;
-    if (specificVideoWrap) specificVideoWrap.style.display = 'none';
-  }
-  if (specificVideoId) specificVideoId.value = settings.specificVideoId || '';
-  if (filterSpam) filterSpam.checked = settings.filterSpam !== false;
-  if (ignoreOwn) ignoreOwn.checked = settings.ignoreOwnComments !== false;
-  if (minLengthCheck) minLengthCheck.checked = (settings.minCommentLength || 2) > 1;
-
-  // Update Stats Cards
-  const statToday = document.getElementById('crStatToday');
-  const statTotal = document.getElementById('crStatTotal');
-  const statPersona = document.getElementById('crStatPersona');
-  if (statToday) statToday.textContent = `${settings.repliesToday || 0} / ${settings.maxDailyReplies || 100}`;
-  if (statTotal) statTotal.textContent = settings.totalRepliedCount || 0;
-  if (statPersona) {
-    const personaLabels = {
-      friendly_gamer: 'Gamer Hype',
-      professional: 'Professional',
-      funny: 'Witty & Fun',
-      custom: 'Custom AI'
-    };
-    statPersona.textContent = personaLabels[settings.persona] || 'Gamer Hype';
-  }
-
-  const lastScanEl = document.getElementById('crLastScanTimeText');
-  if (lastScanEl && settings.lastCheckTime) {
-    const d = new Date(settings.lastCheckTime);
-    lastScanEl.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  }
-}
-
-function updateCommentResponderStatusUI(status) {
-  const isRunning = status.running || status.enabled;
-  const statusEl = document.getElementById('crStatStatus');
-  const statusSub = document.getElementById('crStatStatusSub');
-  const livePill = document.getElementById('crLiveStatusPill');
-  const livePillText = document.getElementById('crLiveStatusText');
-  const toggle = document.getElementById('crEnabledToggle');
-
-  if (toggle) toggle.checked = Boolean(isRunning);
-
-  if (statusEl) {
-    statusEl.textContent = isRunning ? 'Active' : 'Disabled';
-    statusEl.style.color = isRunning ? '#34d399' : '#f87171';
-  }
-
-  if (statusSub) {
-    statusSub.innerHTML = isRunning 
-      ? '<i class="fa-solid fa-circle" style="color: #34d399;"></i> Polling for new comments' 
-      : '<i class="fa-solid fa-circle" style="color: #f87171;"></i> Service Idle';
-  }
-
-  if (livePill && livePillText) {
-    if (isRunning) {
-      livePill.className = 'live-status-pill online';
-      livePillText.textContent = 'Running';
-    } else {
-      livePill.className = 'live-status-pill offline';
-      livePillText.textContent = 'Stopped';
-    }
-  }
-
-  const statToday = document.getElementById('crStatToday');
-  const statTotal = document.getElementById('crStatTotal');
-  if (statToday && status.repliesToday !== undefined) {
-    statToday.textContent = `${status.repliesToday} / ${status.maxDailyReplies || 100}`;
-  }
-  if (statTotal && status.totalRepliedCount !== undefined) {
-    statTotal.textContent = status.totalRepliedCount;
-  }
-}
-
-async function saveCommentResponderSettings() {
-  const checkInterval = parseInt(document.getElementById('crCheckInterval')?.value) || 60;
-  const maxDailyReplies = parseInt(document.getElementById('crMaxDailyReplies')?.value) || 100;
-  const persona = document.getElementById('crPersonaSelect')?.value || 'friendly_gamer';
-  const customPrompt = document.getElementById('crCustomPrompt')?.value || '';
-  const specificVideoOnly = document.getElementById('crTargetSpecific')?.checked || false;
-  const specificVideoId = document.getElementById('crSpecificVideoId')?.value.trim() || '';
-  const filterSpam = document.getElementById('crFilterSpam')?.checked !== false;
-  const ignoreOwnComments = document.getElementById('crIgnoreOwn')?.checked !== false;
-  const minCommentLength = document.getElementById('crMinLengthCheck')?.checked ? 2 : 0;
-
-  const payload = {
-    checkIntervalSeconds: checkInterval,
-    maxDailyReplies,
-    persona,
-    customPrompt,
-    specificVideoOnly,
-    specificVideoId,
-    filterSpam,
-    ignoreOwnComments,
-    minCommentLength
-  };
-
-  try {
-    const res = await fetch('/api/comment-responder/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if (data.success) {
-      crSettings = data.settings;
-      populateCommentResponderUI(data.settings);
-      showToast('AI Comment Auto-Responder Settings Saved!');
-    } else {
-      showToast('Failed to save settings: ' + (data.error || 'Unknown error'), true);
-    }
-  } catch (err) {
-    showToast('Failed to save settings: ' + err.message, true);
-  }
-}
-
-async function runCommentResponderNow() {
-  const btn = document.getElementById('crRunNowBtn');
-  const icon = document.getElementById('crRunNowIcon');
-  if (btn) btn.disabled = true;
-  if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
-
-  try {
-    const res = await fetch('/api/comment-responder/run-now', { method: 'POST' });
-    const data = await res.json();
-    if (data.success) {
-      const { processedCount, repliedCount } = data.result || {};
-      showToast(`Scan complete! Processed: ${processedCount || 0}, Replied: ${repliedCount || 0}`);
-      if (data.status) updateCommentResponderStatusUI(data.status);
-      await fetchCommentResponderLogs();
-    } else {
-      showToast(data.error || 'Could not run comment scan', true);
-    }
-  } catch (err) {
-    showToast('Run error: ' + err.message, true);
-  } finally {
-    if (btn) btn.disabled = false;
-    if (icon) icon.className = 'fa-solid fa-play';
-  }
-}
-
-async function fetchCommentResponderLogs() {
-  try {
-    const res = await fetch('/api/comment-responder/logs');
-    const data = await res.json();
-    if (data.success && Array.isArray(data.logs)) {
-      crLogs = data.logs;
-      renderCommentResponderLogs(crLogs);
-    }
-  } catch (err) {
-    console.error('Error fetching comment reply logs:', err);
-  }
-}
-
-function renderCommentResponderLogs(logs) {
-  const emptyState = document.getElementById('crLogsEmptyState');
-  const tableWrap = document.getElementById('crLogsTableWrap');
-  const tableBody = document.getElementById('crLogsTableBody');
-  const countBadge = document.getElementById('crLogsCountBadge');
-
-  if (countBadge) {
-    countBadge.textContent = `${logs.length} Logged`;
-  }
-
-  if (!logs || logs.length === 0) {
-    if (emptyState) emptyState.style.display = 'block';
-    if (tableWrap) tableWrap.style.display = 'none';
-    return;
-  }
-
-  if (emptyState) emptyState.style.display = 'none';
-  if (tableWrap) tableWrap.style.display = 'block';
-  if (!tableBody) return;
-
-  tableBody.innerHTML = logs.map(item => {
-    const isSuccess = item.status === 'success';
-    const isIgnored = item.status === 'ignored';
-    const isFiltered = item.status === 'filtered';
-
-    let statusBadge = '<span class="badge" style="background: rgba(16,185,129,0.2); color: #34d399;"><i class="fa-solid fa-check"></i> Replied</span>';
-    if (isFiltered) {
-      statusBadge = '<span class="badge" style="background: rgba(239,68,68,0.2); color: #f87171;"><i class="fa-solid fa-ban"></i> Spam Filtered</span>';
-    } else if (isIgnored) {
-      statusBadge = '<span class="badge" style="background: rgba(148,163,184,0.2); color: #94a3b8;"><i class="fa-solid fa-forward"></i> Skipped</span>';
-    } else if (item.status === 'error') {
-      statusBadge = '<span class="badge" style="background: rgba(245,158,11,0.2); color: #fbbf24;"><i class="fa-solid fa-triangle-exclamation"></i> Error</span>';
-    }
-
-    const timeStr = item.repliedAt ? new Date(item.repliedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '--';
-    const avatarImg = item.authorAvatar 
-      ? `<img src="${item.authorAvatar}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none'" />` 
-      : '<i class="fa-solid fa-user-circle" style="font-size: 20px; color: var(--text-muted);"></i>';
-
-    const videoLink = item.videoId 
-      ? `<a href="https://youtu.be/${item.videoId}" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: none; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-brands fa-youtube" style="color: #ff0000;"></i> View Video <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 9px;"></i></a>` 
-      : '';
-
-    return `
-      <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px;">
-        <td style="padding: 12px 16px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            ${avatarImg}
-            <div>
-              <strong style="color: #fff; font-size: 13px;">@${escapeHtml(item.authorName || 'Viewer')}</strong>
-              <div>${videoLink}</div>
-            </div>
-          </div>
-        </td>
-        <td style="padding: 12px 16px; color: #cbd5e1; max-width: 260px; word-break: break-word;">
-          "${escapeHtml(item.commentText || '')}"
-        </td>
-        <td style="padding: 12px 16px; color: #a78bfa; max-width: 280px; word-break: break-word;">
-          ${isSuccess ? `🤖 <strong style="color: #c4b5fd;">${escapeHtml(item.replyText || '')}</strong>` : `<span style="color: var(--text-muted); font-size: 12px;">${escapeHtml(item.replyText || '')}</span>`}
-        </td>
-        <td style="padding: 12px 16px; color: var(--text-muted); font-size: 11.5px; white-space: nowrap;">
-          ${timeStr}
-        </td>
-        <td style="padding: 12px 16px; text-align: right; white-space: nowrap;">
-          ${statusBadge}
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-// Socket event listeners for Comment Responder
-socket.on('commentResponderStatus', (status) => {
-  if (status) {
-    updateCommentResponderStatusUI(status);
-  }
-});
-
-socket.on('commentReplied', (replyRecord) => {
-  if (replyRecord) {
-    crLogs.unshift(replyRecord);
-    renderCommentResponderLogs(crLogs);
-    showToast(`🤖 Replied to comment by @${replyRecord.authorName}!`, 'success', 'AI Auto-Reply');
-  }
-});
-
-
 // Auto-populate all OBS overlay & OAuth URLs with dynamic cloud origin (Render/Localhost)
 function initDynamicOriginUrls() {
   const origin = window.location.origin;
@@ -5420,7 +5157,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initVideoDownloader();
   initMultiStreamModule();
   initTtsStudio();
-  initCommentResponder();
+  initShortsSyncModule();
 
   // Load all initial data
   await Promise.all([
@@ -5442,9 +5179,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     fetchGeminiConfig(),
     fetchDownloadedFiles(),
     fetchMultiStreamConfig(),
-    fetchTtsHistory(),
-    fetchCommentResponderSettings(),
-    fetchCommentResponderLogs()
+    fetchTtsHistory()
   ]);
 });
 
@@ -5452,3 +5187,447 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 
 
+
+// =============================================================
+// AUTO SHORTS CLONER & UPLOADER MODULE
+// =============================================================
+
+function initShortsSyncModule() {
+  const targetUrlInput = document.getElementById('shortsTargetUrlInput');
+  const btnScan = document.getElementById('btnScanTargetShorts');
+  const btnRunSync = document.getElementById('btnRunSyncNow');
+  const autoPilotToggle = document.getElementById('shortsAutoPilotToggle');
+  const syncHourSelect = document.getElementById('shortsSyncHourSelect');
+  const privacySelect = document.getElementById('shortsPrivacySelect');
+  const appendTagCheckbox = document.getElementById('shortsAppendTag');
+  const progressBox = document.getElementById('shortsSyncProgressBox');
+  const progressTitle = document.getElementById('shortsSyncProgressTitle');
+  const progressMsg = document.getElementById('shortsSyncProgressMsg');
+  const queueBox = document.getElementById('shortsScannedQueueBox');
+  const queueBody = document.getElementById('shortsScannedTableBody');
+  const scanCountBadge = document.getElementById('shortsScanCountBadge');
+  const historyBody = document.getElementById('shortsHistoryTableBody');
+  const btnRefreshHistory = document.getElementById('btnRefreshShortsHistory');
+  const destBadge = document.getElementById('shortsSyncDestBadge');
+  const destName = document.getElementById('shortsSyncDestName');
+  const destAvatar = document.getElementById('shortsDestAvatar');
+  const destTitle = document.getElementById('shortsDestTitle');
+  const destCustomUrl = document.getElementById('shortsDestCustomUrl');
+  const destSubCount = document.getElementById('shortsDestSubCount');
+  const destTypeBadge = document.getElementById('shortsDestTypeBadge');
+  const btnDisconnectDest = document.getElementById('btnDisconnectShortsDest');
+  const btnToggleCustomOAuth = document.getElementById('btnToggleCustomOAuth');
+  const customOAuthBox = document.getElementById('shortsCustomOAuthBox');
+  const customClientIdInput = document.getElementById('customOAuthClientId');
+  const customClientSecretInput = document.getElementById('customOAuthClientSecret');
+  const btnSaveCustomOAuth = document.getElementById('btnSaveCustomOAuth');
+  const btnResetCustomOAuth = document.getElementById('btnResetCustomOAuth');
+
+  if (!btnScan || !btnRunSync) return;
+
+  // Handle OAuth return redirect toasts
+  const currentUrl = window.location.href;
+  if (currentUrl.includes('connected=true')) {
+    showToast('🎉 Destination YouTube Channel connected successfully!');
+    window.history.replaceState({}, document.title, window.location.pathname + '#shorts-sync');
+  } else if (currentUrl.includes('error=')) {
+    const errMatch = currentUrl.match(/error=([^&]+)/);
+    if (errMatch) {
+      showToast(`Channel connection failed: ${decodeURIComponent(errMatch[1])}`, true);
+      window.history.replaceState({}, document.title, window.location.pathname + '#shorts-sync');
+    }
+  }
+
+  async function loadSettingsAndChannel() {
+    try {
+      const res = await fetch('/api/shorts-sync/settings');
+      const data = await res.json();
+      if (data.success) {
+        renderDestinationCard(data.destinationAccount);
+        if (data.settings) {
+          if (targetUrlInput && data.settings.targetChannelUrl) {
+            targetUrlInput.value = data.settings.targetChannelUrl;
+          }
+          if (autoPilotToggle) {
+            autoPilotToggle.checked = !!data.settings.autoSyncEnabled;
+          }
+          if (syncHourSelect && data.settings.syncHour !== undefined) {
+            syncHourSelect.value = String(data.settings.syncHour);
+          }
+          if (privacySelect && data.settings.privacyStatus) {
+            privacySelect.value = data.settings.privacyStatus;
+          }
+          if (appendTagCheckbox && data.settings.appendShortsTag !== undefined) {
+            appendTagCheckbox.checked = !!data.settings.appendShortsTag;
+          }
+          if (data.settings.customOAuth) {
+            if (customClientIdInput) customClientIdInput.value = data.settings.customOAuth.clientId || '';
+            if (customClientSecretInput) customClientSecretInput.value = data.settings.customOAuth.clientSecret || '';
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load shorts sync settings:', e);
+    }
+  }
+
+  function renderDestinationCard(destAcc) {
+    if (!destTitle) return;
+    if (destAcc && destAcc.isConnected && destAcc.channel) {
+      const ch = destAcc.channel;
+      destTitle.textContent = ch.title || 'Connected Channel';
+      if (destCustomUrl) destCustomUrl.textContent = ch.customUrl || '';
+      if (destSubCount) destSubCount.textContent = ch.subscriberCount ? `${Number(ch.subscriberCount).toLocaleString()} Subs` : '';
+      if (destAvatar && ch.avatar) destAvatar.src = ch.avatar;
+      if (destName) destName.textContent = ch.title || 'Connected';
+      if (destTypeBadge) {
+        if (destAcc.isDedicated) {
+          destTypeBadge.textContent = 'Dedicated Upload Channel';
+          destTypeBadge.style.background = 'rgba(16, 185, 129, 0.2)';
+          destTypeBadge.style.color = '#10b981';
+        } else {
+          destTypeBadge.textContent = 'Primary Bot Channel';
+          destTypeBadge.style.background = 'rgba(59, 130, 246, 0.2)';
+          destTypeBadge.style.color = '#60a5fa';
+        }
+      }
+      if (btnDisconnectDest) btnDisconnectDest.style.display = destAcc.isDedicated ? 'inline-flex' : 'none';
+    } else {
+      destTitle.textContent = 'No Channel Connected';
+      if (destCustomUrl) destCustomUrl.textContent = 'Please connect a channel to upload';
+      if (destSubCount) destSubCount.textContent = '';
+      if (destName) destName.textContent = 'Not Connected';
+      if (destTypeBadge) {
+        destTypeBadge.textContent = 'Disconnected';
+        destTypeBadge.style.background = 'rgba(239, 68, 68, 0.2)';
+        destTypeBadge.style.color = '#ef4444';
+      }
+      if (btnDisconnectDest) btnDisconnectDest.style.display = 'none';
+    }
+  }
+
+  async function saveSettings(extra = {}) {
+    try {
+      const payload = {
+        targetChannelUrl: targetUrlInput ? targetUrlInput.value.trim() : '',
+        autoSyncEnabled: autoPilotToggle ? autoPilotToggle.checked : false,
+        syncHour: syncHourSelect ? parseInt(syncHourSelect.value, 10) : 18,
+        privacyStatus: privacySelect ? privacySelect.value : 'public',
+        appendShortsTag: appendTagCheckbox ? appendTagCheckbox.checked : true,
+        ...extra
+      };
+      await fetch('/api/shorts-sync/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch (e) {
+      console.error('Failed to save shorts sync settings:', e);
+    }
+  }
+
+  async function loadHistory() {
+    try {
+      const res = await fetch('/api/shorts-sync/history');
+      const data = await res.json();
+      if (data.success) {
+        renderHistory(data.history || []);
+      }
+    } catch (e) {
+      console.error('Failed to load shorts sync history:', e);
+    }
+  }
+
+  function renderHistory(items) {
+    if (!historyBody) return;
+    if (!items || items.length === 0) {
+      historyBody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 25px; color: var(--text-muted);">
+            No shorts cloned yet. Paste a target channel URL above and click "Upload #1 Top Short Now".
+          </td>
+        </tr>`;
+      return;
+    }
+
+    historyBody.innerHTML = items.map(item => {
+      const dateStr = item.syncedAt ? new Date(item.syncedAt).toLocaleDateString() + ' ' + new Date(item.syncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent';
+      const viewsFmt = item.sourceViews ? Number(item.sourceViews).toLocaleString() : 'N/A';
+      return `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <td style="padding: 10px 14px; color: var(--text-muted); font-size: 12px;">${dateStr}</td>
+          <td style="padding: 10px 14px; font-weight: 600;">
+            <a href="${item.sourceUrl}" target="_blank" style="color: #60a5fa; text-decoration: none; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-brands fa-youtube text-red"></i> ${escapeHtml(item.sourceTitle || 'Untitled')}
+            </a>
+          </td>
+          <td style="padding: 10px 14px; color: #fbbf24; font-weight: 600;">${viewsFmt}</td>
+          <td style="padding: 10px 14px;">
+            <a href="${item.uploadedUrl}" target="_blank" style="color: #34d399; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> View Uploaded Short
+            </a>
+          </td>
+          <td style="padding: 10px 14px; text-align: center;">
+            <span class="badge" style="background: rgba(255,255,255,0.1); font-size: 11px; text-transform: uppercase;">${item.privacyStatus || 'public'}</span>
+          </td>
+          <td style="padding: 10px 14px; text-align: center;">
+            <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-size: 11px;">
+              <i class="fa-solid fa-check"></i> LIVE
+            </span>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  function renderScannedQueue(shorts) {
+    if (!queueBody || !queueBox) return;
+    if (!shorts || shorts.length === 0) {
+      queueBox.style.display = 'none';
+      return;
+    }
+
+    queueBox.style.display = 'block';
+    if (scanCountBadge) {
+      scanCountBadge.textContent = `${shorts.length} Shorts Found`;
+    }
+
+    queueBody.innerHTML = shorts.map((s, idx) => {
+      const rankColor = idx === 0 ? '#ef4444' : idx === 1 ? '#f59e0b' : idx === 2 ? '#3b82f6' : 'var(--text-muted)';
+      const rankBadge = `<span style="font-weight: 800; font-size: 13px; color: ${rankColor};">#${idx + 1}</span>`;
+      const viewsFmt = s.views ? Number(s.views).toLocaleString() : '0';
+      const statusBadge = s.isProcessed
+        ? `<span class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-muted); font-size: 11px;"><i class="fa-solid fa-check"></i> Already Uploaded</span>`
+        : (idx === 0
+          ? `<span class="badge" style="background: rgba(239, 68, 68, 0.25); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 11px; font-weight: 700;"><i class="fa-solid fa-bolt"></i> Next in Line</span>`
+          : `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 11px;">Ready in Queue</span>`);
+
+      return `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <td style="padding: 8px 14px; vertical-align: middle;">${rankBadge}</td>
+          <td style="padding: 8px 14px; vertical-align: middle;">
+            <img src="${s.thumbnail}" alt="Thumb" style="width: 48px; height: 64px; object-fit: cover; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);" />
+          </td>
+          <td style="padding: 8px 14px; vertical-align: middle;">
+            <a href="${s.url}" target="_blank" style="color: #fff; text-decoration: none; font-weight: 600; font-size: 13px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+              ${escapeHtml(s.title)}
+            </a>
+          </td>
+          <td style="padding: 8px 14px; vertical-align: middle; color: #fbbf24; font-weight: 700;">
+            <i class="fa-solid fa-eye" style="font-size: 11px; margin-right: 4px;"></i> ${viewsFmt}
+          </td>
+          <td style="padding: 8px 14px; vertical-align: middle; text-align: center;">
+            ${statusBadge}
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  // Event Listeners
+  btnScan.addEventListener('click', async () => {
+    const url = targetUrlInput ? targetUrlInput.value.trim() : '';
+    if (!url) {
+      showToast('Please paste a target YouTube channel URL or handle first.', true);
+      return;
+    }
+
+    btnScan.disabled = true;
+    btnScan.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Scanning...`;
+    showToast('Scanning channel shorts and ranking by views...');
+
+    try {
+      await saveSettings();
+      const res = await fetch('/api/shorts-sync/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelUrl: url })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to scan channel');
+      }
+      renderScannedQueue(data.shorts);
+      showToast(`Found ${data.shorts.length} shorts! Ranked by highest view count.`);
+    } catch (e) {
+      showToast(`Scan error: ${e.message}`, true);
+    } finally {
+      btnScan.disabled = false;
+      btnScan.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> Scan Top Shorts`;
+    }
+  });
+
+  btnRunSync.addEventListener('click', async () => {
+    const url = targetUrlInput ? targetUrlInput.value.trim() : '';
+    if (!url) {
+      showToast('Please specify a target channel URL.', true);
+      return;
+    }
+
+    if (!confirm('Start downloading the top performing short and upload it to your connected channel?')) {
+      return;
+    }
+
+    btnRunSync.disabled = true;
+    btnRunSync.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Syncing...`;
+    if (progressBox) {
+      progressBox.style.display = 'block';
+      if (progressTitle) progressTitle.textContent = 'Starting Shorts Sync Pipeline...';
+      if (progressMsg) progressMsg.textContent = 'Discovering top short and preparing highest quality download...';
+    }
+
+    try {
+      await saveSettings();
+      const res = await fetch('/api/shorts-sync/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelUrl: url })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to start sync');
+      }
+      showToast('Sync pipeline started in background! Watch real-time progress below.');
+    } catch (e) {
+      showToast(`Sync error: ${e.message}`, true);
+      btnRunSync.disabled = false;
+      btnRunSync.innerHTML = `<i class="fa-solid fa-bolt"></i> Upload #1 Top Short Now`;
+      if (progressBox) progressBox.style.display = 'none';
+    }
+  });
+
+  if (autoPilotToggle) {
+    autoPilotToggle.addEventListener('change', () => {
+      saveSettings();
+      showToast(autoPilotToggle.checked ? 'Daily Auto-Pilot ENABLED' : 'Daily Auto-Pilot DISABLED');
+    });
+  }
+  if (syncHourSelect) syncHourSelect.addEventListener('change', () => saveSettings());
+  if (privacySelect) privacySelect.addEventListener('change', () => saveSettings());
+  if (appendTagCheckbox) appendTagCheckbox.addEventListener('change', () => saveSettings());
+  if (btnRefreshHistory) btnRefreshHistory.addEventListener('click', () => loadHistory());
+
+  if (btnDisconnectDest) {
+    btnDisconnectDest.addEventListener('click', async () => {
+      if (!confirm('Dedicated destination upload channel disconnect karna hai?')) return;
+      try {
+        await fetch('/api/shorts-sync/destination/disconnect', { method: 'POST' });
+        showToast('Dedicated upload channel disconnected.');
+        loadSettingsAndChannel();
+      } catch (e) {
+        showToast('Disconnect error: ' + e.message, true);
+      }
+    });
+
+    if (btnToggleCustomOAuth && customOAuthBox) {
+      btnToggleCustomOAuth.addEventListener('click', () => {
+        const isHidden = customOAuthBox.style.display === 'none' || !customOAuthBox.style.display;
+        customOAuthBox.style.display = isHidden ? 'block' : 'none';
+      });
+    }
+
+    if (btnSaveCustomOAuth) {
+      btnSaveCustomOAuth.addEventListener('click', async () => {
+        const cId = customClientIdInput ? customClientIdInput.value.trim() : '';
+        const cSec = customClientSecretInput ? customClientSecretInput.value.trim() : '';
+        if (!cId || !cSec) {
+          showToast('Please enter both Client ID and Client Secret.', true);
+          return;
+        }
+        try {
+          await saveSettings({ customOAuth: { clientId: cId, clientSecret: cSec } });
+          showToast('Custom OAuth credentials saved! Now click "Connect / Switch Channel".');
+        } catch (e) {
+          showToast('Failed to save credentials: ' + e.message, true);
+        }
+      });
+    }
+
+    if (btnResetCustomOAuth) {
+      btnResetCustomOAuth.addEventListener('click', async () => {
+        if (!confirm('Reset back to default bot Google credentials?')) return;
+        try {
+          if (customClientIdInput) customClientIdInput.value = '';
+          if (customClientSecretInput) customClientSecretInput.value = '';
+          await saveSettings({ customOAuth: null });
+          showToast('Reset to default bot credentials.');
+        } catch (e) {
+          showToast('Failed to reset: ' + e.message, true);
+        }
+      });
+    }
+  }
+
+  // Socket.IO Real-time Events
+  if (window.socket) {
+    socket.on('shortsDestinationAccountUpdated', destAcc => {
+      renderDestinationCard(destAcc);
+    });
+    socket.on('shortsSyncProgress', data => {
+      if (!progressBox) return;
+      progressBox.style.display = 'block';
+      if (progressTitle) {
+        const stageNames = {
+          scanning: '🔍 Scanning Target Channel...',
+          downloading: '📥 Downloading in Highest Quality...',
+          uploading: '🚀 Uploading to YouTube...',
+          completed: '🎉 Upload Complete!',
+          error: '❌ Sync Failed'
+        };
+        progressTitle.textContent = stageNames[data.stage] || 'Processing Sync...';
+      }
+      if (progressMsg) {
+        progressMsg.textContent = data.message || '';
+      }
+      if (data.stage === 'error') {
+        progressBox.style.border = '1px solid rgba(239, 68, 68, 0.7)';
+        btnRunSync.disabled = false;
+        btnRunSync.innerHTML = `<i class="fa-solid fa-bolt"></i> Upload #1 Top Short Now`;
+      } else if (data.stage === 'completed') {
+        progressBox.style.border = '1px solid rgba(16, 185, 129, 0.7)';
+        btnRunSync.disabled = false;
+        btnRunSync.innerHTML = `<i class="fa-solid fa-bolt"></i> Upload #1 Top Short Now`;
+      }
+    });
+
+    socket.on('shortsSyncSuccess', entry => {
+      showToast(`🎉 Short uploaded successfully! Live at ${entry.uploadedUrl}`);
+      btnRunSync.disabled = false;
+      btnRunSync.innerHTML = `<i class="fa-solid fa-bolt"></i> Upload #1 Top Short Now`;
+      if (progressBox) {
+        progressBox.style.display = 'block';
+        progressBox.style.border = '1px solid rgba(16, 185, 129, 0.7)';
+        if (progressTitle) progressTitle.textContent = '🎉 Upload Complete!';
+        if (progressMsg) progressMsg.innerHTML = `Short successfully uploaded to YouTube: <a href="${entry.uploadedUrl}" target="_blank" style="color: #60a5fa; font-weight: bold; text-decoration: underline;">${entry.uploadedUrl}</a>`;
+      }
+      loadHistory();
+      if (targetUrlInput && targetUrlInput.value.trim()) {
+        btnScan.click();
+      }
+    });
+
+    socket.on('shortsSyncError', data => {
+      showToast(`Shorts sync error: ${data.error}`, true);
+      btnRunSync.disabled = false;
+      btnRunSync.innerHTML = `<i class="fa-solid fa-bolt"></i> Upload #1 Top Short Now`;
+      if (progressBox) {
+        progressBox.style.display = 'block';
+        progressBox.style.border = '1px solid rgba(239, 68, 68, 0.7)';
+        if (progressTitle) progressTitle.textContent = '❌ Sync Failed';
+        if (progressMsg) progressMsg.textContent = data.error || 'Failed to sync short';
+      }
+    });
+
+    socket.on('shortsSyncHistoryUpdated', items => {
+      renderHistory(items);
+    });
+
+    socket.on('shortsSyncSettingsUpdated', settings => {
+      if (autoPilotToggle && settings.autoSyncEnabled !== undefined) {
+        autoPilotToggle.checked = !!settings.autoSyncEnabled;
+      }
+    });
+  }
+
+  // Initial loads
+  loadSettingsAndChannel();
+  loadHistory();
+}
