@@ -5,8 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
-    "postinstall": "node scripts/setup_render_env.js"
+    "dev": "node --watch src/server.js"
   },
   "engines": {
     "node": ">=18.0.0"
