@@ -11,8 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install yt-dlp for video downloads
+# Install yt-dlp for video downloads (both pip package and standalone binary for maximum resilience)
 RUN python3 -m pip install --no-cache-dir --break-system-packages yt-dlp || true
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && chmod a+rx /usr/local/bin/yt-dlp
 
 # Set working directory
 WORKDIR /app

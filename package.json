@@ -5,13 +5,17 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "postinstall": "node scripts/setup_render_env.js"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@jerrycoder/instagram-api": "^2.5.9",
+    "axios": "^1.21.0",
+    "btch-downloader": "^6.4.0",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -19,6 +23,10 @@
     "google-tts-api": "^2.0.2",
     "googleapis": "^140.0.0",
     "helmet": "^8.3.0",
+    "insta-fetcher": "^1.4.0",
+    "instagram-url-direct": "^2.0.7",
+    "puppeteer-core": "^25.16.0",
+    "snapsave-media-downloader": "^2.5.1",
     "socket.io": "^4.7.5"
   }
 }

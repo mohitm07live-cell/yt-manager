@@ -1,10 +1,9 @@
 services:
   - type: web
     name: yt-management-bot
-    env: node
+    env: docker
+    dockerfilePath: ./Dockerfile
     plan: free
-    buildCommand: npm install --omit=dev
-    startCommand: npm start
     healthCheckPath: /health
     autoDeploy: true
     envVars:
