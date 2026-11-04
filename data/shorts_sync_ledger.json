@@ -1,0 +1,65 @@
+{
+  "settings": {
+    "targetChannelUrl": "https://www.youtube.com/@Ashugamingyt90",
+    "autoSyncEnabled": true,
+    "syncHour": 18,
+    "privacyStatus": "public",
+    "categoryId": "20",
+    "appendShortsTag": true,
+    "lastSyncDate": "2026-11-04"
+  },
+  "history": [
+    {
+      "id": "sync-1793816681180",
+      "sourceVideoId": "FwWxBdel2r8",
+      "sourceTitle": "Bunny Bundle Ko Free Mai Kaise Nikale 🤑💎 | Bunny Bundle Free Trick Free Fire 🤯🔥 #freefire",
+      "sourceViews": 238000,
+      "sourceUrl": "https://www.youtube.com/shorts/FwWxBdel2r8",
+      "uploadedVideoId": "hZoUTqemH8Y",
+      "uploadedUrl": "https://www.youtube.com/shorts/hZoUTqemH8Y",
+      "uploadedTitle": "Bunny Bundle Ko Free Mai Kaise Nikale 🤑💎 | Bunny Bundle Free Trick Free Fire 🤯🔥 #freefire",
+      "privacyStatus": "public",
+      "syncedAt": "2026-11-04T18:24:41.180Z",
+      "status": "success"
+    },
+    {
+      "id": "sync-1793816354288",
+      "sourceVideoId": "FD-lQWY6s9E",
+      "sourceTitle": "Lol Emote Free Me Kaise Nikale😱||Lol Emote Box Kaha Se Le🔥|| #freefireshorts",
+      "sourceViews": 651000,
+      "sourceUrl": "https://www.youtube.com/shorts/FD-lQWY6s9E",
+      "uploadedVideoId": "qca1rhtxd7E",
+      "uploadedUrl": "https://www.youtube.com/shorts/qca1rhtxd7E",
+      "uploadedTitle": "Lol Emote Free Me Kaise Nikale😱||Lol Emote Box Kaha Se Le🔥|| #freefireshorts #Shorts",
+      "privacyStatus": "public",
+      "syncedAt": "2026-11-04T18:19:14.288Z",
+      "status": "success"
+    }
+  ],
+  "destinationAccount": {
+    "tokens": {
+      "access_token": "ya29.a0AehfTOknN6-nvBv4-sD2OR7_Sll1lESjk3HZdYDA52Kwnzcu-d9njcy95Lpl9KUQcF1IXzNgWhv8BG_bsN0UhBPnZKuPd_UtsVSCJzwaeJAGScUkuRxWlIdyDcqFqY16_gREET_Igp9WsrIc8GsPQQPpd8VqPck2DPCtGtSLjuEZvlILR0I7HP5yRn6a1ZeRzVFuWrEaCgYKASsSAQwSFQHGX2Mi8NB1vPSxizaCBQLlO3r05w0206",
+      "refresh_token": "1//0gfS2otCYodKwCgYIARAAGBASNwF-L9IrUktY6KYfZwc11j2lVCHLQ27sak6ENHCF8viQ_Aw4-d-SUavtWFMHr0lMxj1uAg5D644",
+      "scope": "https://www.googleapis.com/auth/youtube.force-ssl openid https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
+      "token_type": "Bearer",
+      "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Ijk0M2EzYTVkN2Q5MTk2MjVhNDU0ZTQ4OWI3NWMyOWFkYWI1N2FjYmEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI2NzA1NzY5NDIxMTMtMzVubDJkamRvdXMwYm45cWlqNHBsdmt0dXI0MW1zOTkuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiI2NzA1NzY5NDIxMTMtMzVubDJkamRvdXMwYm45cWlqNHBsdmt0dXI0MW1zOTkuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTUzNTI1MjQ5MTk1MzYyNDg2MjAiLCJlbWFpbCI6Im1vaGl0bTA3bGl2ZUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiYXRfaGFzaCI6IjVocF9mOHoyTFlLWmxrcVhlTG1kR0EiLCJuYW1lIjoiTW9oaXQgU2luZGh1IiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0pJSUJLLWxzNUJIN2ZNSXdMdnVtblhsQ1pzVTUxNm5tbzZncENJUHNkeTdGZlgxdUk9czk2LWMiLCJnaXZlbl9uYW1lIjoiTW9oaXQiLCJmYW1pbHlfbmFtZSI6IlNpbmRodSIsImlhdCI6MTc5MzgxNTMwNCwiZXhwIjoxNzkzODE4OTA0fQ.P32ku3caP4QYJ_y9JvQj28uCKzdQEumVdBzhUf3Ra5Fdy5cpEyp8S15kyR4QgqMu-zaOZVCwhLFauakKBJfHGqyyGMjvh5vL3_yyXMwazsSNajSzhIpCL9uq9GyzulKKDrGLg1_uhcKLCgzYopVuaTSHUoaLDTKDkQB9n_WZ6H4U75d5McgyKt4WoZtm74xpwgync0BvExrsrIT3o8gcp4fJQTBh3E8LAdGjyJrz8hW66VEJvJZfBpHxSRuZebWNi30agsEoZ4Oeb4EPTgOkTj7bNKKu_x39QVdIJHZwo6OQm6immNG369oBwKtNLcQMpTSQi1os0FtvVA1CQCT96w",
+      "refresh_token_expires_in": 604799,
+      "expiry_date": 1793818901631
+    },
+    "channelInfo": {
+      "id": "UCoz-E3Ma6yMdVkpLwawhkzg",
+      "title": "Mohit Sindhu",
+      "customUrl": "@mohitsindhu-t2r",
+      "avatar": "https://yt3.ggpht.com/Vk8yvgopwPRfIYI0S-g5da6ZgH19zXkdcYmvobinF9zIO_hqxvnzSjiIJ2m3bRe9zQrlQfc8-A=s88-c-k-c0x00ffffff-no-rj",
+      "subscriberCount": "0",
+      "videoCount": "0"
+    },
+    "userProfile": {
+      "id": "115352524919536248620",
+      "name": "Mohit Sindhu",
+      "email": "mohitm07live@gmail.com",
+      "picture": "https://lh3.googleusercontent.com/a/ACg8ocJIIBK-ls5BH7fMIwLvumnXlCZsU516nmo6gpCIPsdy7FfX1uI=s96-c"
+    },
+    "connectedAt": "2026-11-04T18:01:42.898Z"
+  }
+}
