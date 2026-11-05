@@ -5325,6 +5325,11 @@ function initShortsSyncModule() {
         if (data.settings) {
           if (targetUrlInput) {
             targetUrlInput.value = data.settings.targetChannelUrl || '';
+            if (currentChannelId === 'channel_1') {
+              targetUrlInput.placeholder = "Channel 1 Target URL (e.g. https://www.youtube.com/@Ashugamingyt90)";
+            } else {
+              targetUrlInput.placeholder = "Channel 2 Target URL (kisi aur channel ka link jahan se shaam ko upload hoga)";
+            }
           }
           if (autoPilotToggle) {
             autoPilotToggle.checked = !!data.settings.autoSyncEnabled;
@@ -5358,12 +5363,22 @@ function initShortsSyncModule() {
     if (destAcc && destAcc.isConnected && destAcc.channel) {
       const ch = destAcc.channel;
       destTitle.textContent = ch.title || `${chNamePrefix} Connected`;
-      if (destCustomUrl) destCustomUrl.textContent = ch.customUrl || '';
+      if (destCustomUrl) {
+        if (destAcc.isShared) {
+          destCustomUrl.textContent = `${ch.customUrl || ''} • (Shared: Uploading to same channel ${ch.title || ''})`;
+        } else {
+          destCustomUrl.textContent = ch.customUrl || '';
+        }
+      }
       if (destSubCount) destSubCount.textContent = ch.subscriberCount ? `${Number(ch.subscriberCount).toLocaleString()} Subs` : '';
       if (destAvatar && ch.avatar) destAvatar.src = ch.avatar;
       if (destName) destName.textContent = `${chNamePrefix}: ${ch.title || 'Connected'}`;
       if (destTypeBadge) {
-        if (destAcc.isDedicated) {
+        if (destAcc.isShared) {
+          destTypeBadge.textContent = `${chNamePrefix} (Same as Channel 1)`;
+          destTypeBadge.style.background = 'rgba(59, 130, 246, 0.25)';
+          destTypeBadge.style.color = '#60a5fa';
+        } else if (destAcc.isDedicated) {
           destTypeBadge.textContent = `${chNamePrefix} (Dedicated)`;
           destTypeBadge.style.background = 'rgba(16, 185, 129, 0.2)';
           destTypeBadge.style.color = '#10b981';
@@ -5373,7 +5388,9 @@ function initShortsSyncModule() {
           destTypeBadge.style.color = '#60a5fa';
         }
       }
-      if (btnDisconnectDest) btnDisconnectDest.style.display = 'inline-flex';
+      if (btnDisconnectDest) {
+        btnDisconnectDest.style.display = destAcc.isShared ? 'none' : 'inline-flex';
+      }
     } else {
       destTitle.textContent = `${chNamePrefix}: Not Connected`;
       if (destCustomUrl) destCustomUrl.textContent = `Click "Connect / Switch Channel" to link a YouTube channel for ${chNamePrefix}`;

@@ -374,17 +374,34 @@ class ShortsAutoSyncService {
       return {
         isConnected: true,
         isDedicated: true,
+        isShared: false,
         channel: ch.destinationAccount.channelInfo,
         user: ch.destinationAccount.userProfile,
         connectedAt: ch.destinationAccount.connectedAt
       };
     }
 
+    // Fallback/auto-inherit Channel 1 account for Channel 2 if Channel 2 does not have a separate login
+    if (targetChannelId === 'channel_2') {
+      const ch1Acc = this.ledger.channels.channel_1?.destinationAccount;
+      if (ch1Acc?.channelInfo) {
+        return {
+          isConnected: true,
+          isDedicated: true,
+          isShared: true,
+          channel: ch1Acc.channelInfo,
+          user: ch1Acc.userProfile,
+          connectedAt: ch1Acc.connectedAt
+        };
+      }
+    }
+
     // Fallback to primary bot auth if channel_1 and no dedicated destination
-    if (targetChannelId === 'channel_1' && auth.isAuthenticated()) {
+    if (auth.isAuthenticated()) {
       return {
         isConnected: true,
         isDedicated: false,
+        isShared: targetChannelId === 'channel_2',
         channel: db.getChannelInfo(),
         user: db.getUserProfile(),
         connectedAt: null
@@ -394,6 +411,7 @@ class ShortsAutoSyncService {
     return {
       isConnected: false,
       isDedicated: false,
+      isShared: false,
       channel: null,
       user: null,
       connectedAt: null
@@ -426,8 +444,16 @@ class ShortsAutoSyncService {
       return client;
     }
 
-    // Fallback to primary bot auth if channel_1 and no dedicated destination
-    if (targetChannelId === 'channel_1' && auth.isAuthenticated()) {
+    // Fallback for Channel 2 to use Channel 1's OAuth tokens if Channel 2 has no separate login
+    if (targetChannelId === 'channel_2') {
+      const ch1 = this.getChannel('channel_1');
+      if (ch1.destinationAccount?.tokens) {
+        return this.getDestinationAuthClient('channel_1');
+      }
+    }
+
+    // Fallback to primary bot auth
+    if (auth.isAuthenticated()) {
       return auth.getOAuthClient();
     }
 
