@@ -10,6 +10,22 @@
   },
   "history": [
     {
+      "id": "sync-1793887167573",
+      "channelId": "channel_1",
+      "channelName": "Channel 1 (Morning)",
+      "destinationChannelTitle": "Mohit Sindhu",
+      "sourceVideoId": "SlwY6T75CQc",
+      "sourceTitle": "Neon Red Criminal Bundle Ko Free Mai Kaise Nikale 🤑💎 | Neon Red Criminal Bundle Free 🥳 #freefire",
+      "sourceViews": 58000,
+      "sourceUrl": "https://www.youtube.com/shorts/SlwY6T75CQc",
+      "uploadedVideoId": "cY4cXcqfZlM",
+      "uploadedUrl": "https://www.youtube.com/shorts/cY4cXcqfZlM",
+      "uploadedTitle": "Neon Red Criminal Bundle Ko Free Mai Kaise Nikale 🤑💎 | Neon Red Criminal Bundle Free 🥳 #freefire",
+      "privacyStatus": "public",
+      "syncedAt": "2026-11-05T13:59:27.573Z",
+      "status": "success"
+    },
+    {
       "id": "sync-1793816681180",
       "sourceVideoId": "FwWxBdel2r8",
       "sourceTitle": "Bunny Bundle Ko Free Mai Kaise Nikale 🤑💎 | Bunny Bundle Free Trick Free Fire 🤯🔥 #freefire",
@@ -38,13 +54,13 @@
   ],
   "destinationAccount": {
     "tokens": {
-      "access_token": "ya29.a0AehfTOknN6-nvBv4-sD2OR7_Sll1lESjk3HZdYDA52Kwnzcu-d9njcy95Lpl9KUQcF1IXzNgWhv8BG_bsN0UhBPnZKuPd_UtsVSCJzwaeJAGScUkuRxWlIdyDcqFqY16_gREET_Igp9WsrIc8GsPQQPpd8VqPck2DPCtGtSLjuEZvlILR0I7HP5yRn6a1ZeRzVFuWrEaCgYKASsSAQwSFQHGX2Mi8NB1vPSxizaCBQLlO3r05w0206",
+      "access_token": "ya29.a0AehfTOkt7y2E-htbflfQDEmWj6fqw-aBKXRmuqU5-JVcWQfandVBrmiQtXiNZhN_BUu-LqSkaKCV1VNp9Dueo4zHkmX2h4Ui0xhs1Dl4VohOeyhA8-EdStNvl5JjsGOby4PU679qkY8iiW2lBuYIT-rQ2y6TIu1Sww6YA-9r9ILltRmO4AJl5lHET_utf4wDk6Qa1GObaCgYKARwSAQwSFQHGX2MiHd6B0_y51p9LQjUK4LNu-g0207",
       "refresh_token": "1//0gfS2otCYodKwCgYIARAAGBASNwF-L9IrUktY6KYfZwc11j2lVCHLQ27sak6ENHCF8viQ_Aw4-d-SUavtWFMHr0lMxj1uAg5D644",
       "scope": "https://www.googleapis.com/auth/youtube.force-ssl openid https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
       "token_type": "Bearer",
-      "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Ijk0M2EzYTVkN2Q5MTk2MjVhNDU0ZTQ4OWI3NWMyOWFkYWI1N2FjYmEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI2NzA1NzY5NDIxMTMtMzVubDJkamRvdXMwYm45cWlqNHBsdmt0dXI0MW1zOTkuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiI2NzA1NzY5NDIxMTMtMzVubDJkamRvdXMwYm45cWlqNHBsdmt0dXI0MW1zOTkuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTUzNTI1MjQ5MTk1MzYyNDg2MjAiLCJlbWFpbCI6Im1vaGl0bTA3bGl2ZUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiYXRfaGFzaCI6IjVocF9mOHoyTFlLWmxrcVhlTG1kR0EiLCJuYW1lIjoiTW9oaXQgU2luZGh1IiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0pJSUJLLWxzNUJIN2ZNSXdMdnVtblhsQ1pzVTUxNm5tbzZncENJUHNkeTdGZlgxdUk9czk2LWMiLCJnaXZlbl9uYW1lIjoiTW9oaXQiLCJmYW1pbHlfbmFtZSI6IlNpbmRodSIsImlhdCI6MTc5MzgxNTMwNCwiZXhwIjoxNzkzODE4OTA0fQ.P32ku3caP4QYJ_y9JvQj28uCKzdQEumVdBzhUf3Ra5Fdy5cpEyp8S15kyR4QgqMu-zaOZVCwhLFauakKBJfHGqyyGMjvh5vL3_yyXMwazsSNajSzhIpCL9uq9GyzulKKDrGLg1_uhcKLCgzYopVuaTSHUoaLDTKDkQB9n_WZ6H4U75d5McgyKt4WoZtm74xpwgync0BvExrsrIT3o8gcp4fJQTBh3E8LAdGjyJrz8hW66VEJvJZfBpHxSRuZebWNi30agsEoZ4Oeb4EPTgOkTj7bNKKu_x39QVdIJHZwo6OQm6immNG369oBwKtNLcQMpTSQi1os0FtvVA1CQCT96w",
-      "refresh_token_expires_in": 604799,
-      "expiry_date": 1793818901631
+      "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Ijk0M2EzYTVkN2Q5MTk2MjVhNDU0ZTQ4OWI3NWMyOWFkYWI1N2FjYmEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI2NzA1NzY5NDIxMTMtMzVubDJkamRvdXMwYm45cWlqNHBsdmt0dXI0MW1zOTkuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiI2NzA1NzY5NDIxMTMtMzVubDJkamRvdXMwYm45cWlqNHBsdmt0dXI0MW1zOTkuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTUzNTI1MjQ5MTk1MzYyNDg2MjAiLCJlbWFpbCI6Im1vaGl0bTA3bGl2ZUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiYXRfaGFzaCI6InVDdDJRTEVCN3BjY3p4X0F1UkxicXciLCJuYW1lIjoiTW9oaXQgU2luZGh1IiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0pJSUJLLWxzNUJIN2ZNSXdMdnVtblhsQ1pzVTUxNm5tbzZncENJUHNkeTdGZlgxdUk9czk2LWMiLCJnaXZlbl9uYW1lIjoiTW9oaXQiLCJmYW1pbHlfbmFtZSI6IlNpbmRodSIsImlhdCI6MTc5Mzg4NzE2NywiZXhwIjoxNzkzODkwNzY3fQ.ju60dtiAo-m3Zo_2F6fRXHDjSdUa2lunnfIIS6wGDQmCqTgoJBjI4_chZ8yofnEzaQQuQMyqvUaxwFmzmhAkcbyZRH4bV356yeKPRDPylN-E1Z3IIg4J5_wuXVu8rorjut19gz0AgvAYrc_tt5f0IadI-3Jk9Fz6LDBsSGNZxBx63fbk5rZnRJ0fNRSVqDq37jgmFApCIsdoeqYGGWVxWWAghhIuwN0ZE-hpR4nF7dtBhGyQzh_PvyUfXRcgY6YauOqpjpjWjggLzod4Ho0kYIW1OYa78-rq1xOoFAX09thQON7BQYe8US7Tp7EF1CNMOYs5dmKjD9kX6iWmL0sEwg",
+      "refresh_token_expires_in": 532936,
+      "expiry_date": 1793890764232
     },
     "channelInfo": {
       "id": "UCoz-E3Ma6yMdVkpLwawhkzg",
@@ -61,5 +77,61 @@
       "picture": "https://lh3.googleusercontent.com/a/ACg8ocJIIBK-ls5BH7fMIwLvumnXlCZsU516nmo6gpCIPsdy7FfX1uI=s96-c"
     },
     "connectedAt": "2026-11-04T18:01:42.898Z"
-  }
+  },
+  "channels": {
+    "channel_1": {
+      "id": "channel_1",
+      "name": "Channel 1 (Morning)",
+      "settings": {
+        "targetChannelUrl": "https://www.youtube.com/@Ashugamingyt90",
+        "autoSyncEnabled": true,
+        "syncHour": 6,
+        "privacyStatus": "public",
+        "categoryId": "20",
+        "appendShortsTag": true,
+        "lastSyncDate": "2026-11-05"
+      },
+      "destinationAccount": {
+        "tokens": {
+          "access_token": "ya29.a0AehfTOkt7y2E-htbflfQDEmWj6fqw-aBKXRmuqU5-JVcWQfandVBrmiQtXiNZhN_BUu-LqSkaKCV1VNp9Dueo4zHkmX2h4Ui0xhs1Dl4VohOeyhA8-EdStNvl5JjsGOby4PU679qkY8iiW2lBuYIT-rQ2y6TIu1Sww6YA-9r9ILltRmO4AJl5lHET_utf4wDk6Qa1GObaCgYKARwSAQwSFQHGX2MiHd6B0_y51p9LQjUK4LNu-g0207",
+          "refresh_token": "1//0gfS2otCYodKwCgYIARAAGBASNwF-L9IrUktY6KYfZwc11j2lVCHLQ27sak6ENHCF8viQ_Aw4-d-SUavtWFMHr0lMxj1uAg5D644",
+          "scope": "https://www.googleapis.com/auth/youtube.force-ssl openid https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
+          "token_type": "Bearer",
+          "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Ijk0M2EzYTVkN2Q5MTk2MjVhNDU0ZTQ4OWI3NWMyOWFkYWI1N2FjYmEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI2NzA1NzY5NDIxMTMtMzVubDJkamRvdXMwYm45cWlqNHBsdmt0dXI0MW1zOTkuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiI2NzA1NzY5NDIxMTMtMzVubDJkamRvdXMwYm45cWlqNHBsdmt0dXI0MW1zOTkuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTUzNTI1MjQ5MTk1MzYyNDg2MjAiLCJlbWFpbCI6Im1vaGl0bTA3bGl2ZUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiYXRfaGFzaCI6InVDdDJRTEVCN3BjY3p4X0F1UkxicXciLCJuYW1lIjoiTW9oaXQgU2luZGh1IiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0pJSUJLLWxzNUJIN2ZNSXdMdnVtblhsQ1pzVTUxNm5tbzZncENJUHNkeTdGZlgxdUk9czk2LWMiLCJnaXZlbl9uYW1lIjoiTW9oaXQiLCJmYW1pbHlfbmFtZSI6IlNpbmRodSIsImlhdCI6MTc5Mzg4NzE2NywiZXhwIjoxNzkzODkwNzY3fQ.ju60dtiAo-m3Zo_2F6fRXHDjSdUa2lunnfIIS6wGDQmCqTgoJBjI4_chZ8yofnEzaQQuQMyqvUaxwFmzmhAkcbyZRH4bV356yeKPRDPylN-E1Z3IIg4J5_wuXVu8rorjut19gz0AgvAYrc_tt5f0IadI-3Jk9Fz6LDBsSGNZxBx63fbk5rZnRJ0fNRSVqDq37jgmFApCIsdoeqYGGWVxWWAghhIuwN0ZE-hpR4nF7dtBhGyQzh_PvyUfXRcgY6YauOqpjpjWjggLzod4Ho0kYIW1OYa78-rq1xOoFAX09thQON7BQYe8US7Tp7EF1CNMOYs5dmKjD9kX6iWmL0sEwg",
+          "refresh_token_expires_in": 532936,
+          "expiry_date": 1793890764232
+        },
+        "channelInfo": {
+          "id": "UCoz-E3Ma6yMdVkpLwawhkzg",
+          "title": "Mohit Sindhu",
+          "customUrl": "@mohitsindhu-t2r",
+          "avatar": "https://yt3.ggpht.com/Vk8yvgopwPRfIYI0S-g5da6ZgH19zXkdcYmvobinF9zIO_hqxvnzSjiIJ2m3bRe9zQrlQfc8-A=s88-c-k-c0x00ffffff-no-rj",
+          "subscriberCount": "0",
+          "videoCount": "0"
+        },
+        "userProfile": {
+          "id": "115352524919536248620",
+          "name": "Mohit Sindhu",
+          "email": "mohitm07live@gmail.com",
+          "picture": "https://lh3.googleusercontent.com/a/ACg8ocJIIBK-ls5BH7fMIwLvumnXlCZsU516nmo6gpCIPsdy7FfX1uI=s96-c"
+        },
+        "connectedAt": "2026-11-04T18:01:42.898Z"
+      }
+    },
+    "channel_2": {
+      "id": "channel_2",
+      "name": "Channel 2 (Evening)",
+      "settings": {
+        "targetChannelUrl": "https://www.youtube.com/@Ashugamingyt90",
+        "autoSyncEnabled": true,
+        "syncHour": 18,
+        "privacyStatus": "public",
+        "categoryId": "20",
+        "appendShortsTag": true,
+        "lastSyncDate": null
+      },
+      "destinationAccount": null
+    }
+  },
+  "activeChannel": "channel_1"
 }

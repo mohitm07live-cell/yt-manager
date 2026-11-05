@@ -5235,6 +5235,7 @@ function initShortsSyncModule() {
   const customClientSecretInput = document.getElementById('customOAuthClientSecret');
   const btnSaveCustomOAuth = document.getElementById('btnSaveCustomOAuth');
   const btnResetCustomOAuth = document.getElementById('btnResetCustomOAuth');
+  const btnConnectShortsDest = document.getElementById('btnConnectShortsDest');
 
   // Anti-Bot Cookies elements
   const btnToggleCookies = document.getElementById('btnToggleCookies');
@@ -5245,12 +5246,30 @@ function initShortsSyncModule() {
   const cookieStatusLabel = document.getElementById('cookieStatusLabel');
   const cookieBadgeStatus = document.getElementById('cookieBadgeStatus');
 
+  // Dual Channel elements
+  const ch1TimingBadge = document.getElementById('ch1TimingBadge');
+  const ch2TimingBadge = document.getElementById('ch2TimingBadge');
+  const activeChannelSchedulePill = document.getElementById('activeChannelSchedulePill');
+  let currentChannelId = 'channel_1';
+  let channelsData = {};
+
   if (!btnScan || !btnRunSync) return;
+
+  function formatHourLabel(h) {
+    const hour = parseInt(h, 10);
+    if (isNaN(hour)) return '06:00 PM';
+    if (hour === 0) return '12:00 AM';
+    if (hour < 12) return `${String(hour).padStart(2, '0')}:00 AM`;
+    if (hour === 12) return '12:00 PM';
+    return `${String(hour - 12).padStart(2, '0')}:00 PM`;
+  }
 
   // Handle OAuth return redirect toasts
   const currentUrl = window.location.href;
   if (currentUrl.includes('connected=true')) {
-    showToast('🎉 Destination YouTube Channel connected successfully!');
+    const chMatch = currentUrl.match(/channelId=([^&]+)/);
+    if (chMatch) currentChannelId = chMatch[1];
+    showToast(`🎉 Destination YouTube Channel connected successfully!`);
     window.history.replaceState({}, document.title, window.location.pathname + '#shorts-sync');
   } else if (currentUrl.includes('error=')) {
     const errMatch = currentUrl.match(/error=([^&]+)/);
@@ -5260,21 +5279,58 @@ function initShortsSyncModule() {
     }
   }
 
-  async function loadSettingsAndChannel() {
+  async function loadSettingsAndChannel(channelId = null) {
     try {
-      const res = await fetch('/api/shorts-sync/settings');
+      const activeId = channelId || currentChannelId || 'channel_1';
+      const res = await fetch(`/api/shorts-sync/settings?channelId=${activeId}`);
       const data = await res.json();
       if (data.success) {
+        currentChannelId = data.activeChannel || activeId;
+        channelsData = data.channels || {};
+
+        // Update Tab visual state
+        document.querySelectorAll('.shorts-channel-tab-btn').forEach(btn => {
+          if (btn.dataset.channelId === currentChannelId) {
+            btn.classList.add('btn-primary', 'active');
+            btn.classList.remove('btn-secondary');
+          } else {
+            btn.classList.add('btn-secondary');
+            btn.classList.remove('btn-primary', 'active');
+          }
+        });
+
+        // Update Channel Timing Badges in tabs
+        if (ch1TimingBadge && channelsData.channel_1?.settings) {
+          ch1TimingBadge.textContent = formatHourLabel(channelsData.channel_1.settings.syncHour !== undefined ? channelsData.channel_1.settings.syncHour : 6);
+        }
+        if (ch2TimingBadge && channelsData.channel_2?.settings) {
+          ch2TimingBadge.textContent = formatHourLabel(channelsData.channel_2.settings.syncHour !== undefined ? channelsData.channel_2.settings.syncHour : 18);
+        }
+
+        // Update active schedule summary pill
+        if (activeChannelSchedulePill) {
+          const chName = currentChannelId === 'channel_1' ? 'Channel 1' : 'Channel 2';
+          const hour = data.settings?.syncHour !== undefined ? data.settings.syncHour : (currentChannelId === 'channel_1' ? 6 : 18);
+          const isEnabled = data.settings?.autoSyncEnabled;
+          activeChannelSchedulePill.innerHTML = `<i class="fa-regular fa-clock" style="margin-right: 4px;"></i> ${chName} Scheduled: <b>${formatHourLabel(hour)} Daily</b> ${isEnabled ? '<span style="color: #34d399;">(ON)</span>' : '<span style="color: #f87171;">(OFF)</span>'}`;
+        }
+
+        // Update Connect Channel URL to target this specific channel ID
+        if (btnConnectShortsDest) {
+          btnConnectShortsDest.href = `/auth/shorts-destination/login?channelId=${currentChannelId}`;
+        }
+
         renderDestinationCard(data.destinationAccount);
+
         if (data.settings) {
-          if (targetUrlInput && data.settings.targetChannelUrl) {
-            targetUrlInput.value = data.settings.targetChannelUrl;
+          if (targetUrlInput) {
+            targetUrlInput.value = data.settings.targetChannelUrl || '';
           }
           if (autoPilotToggle) {
             autoPilotToggle.checked = !!data.settings.autoSyncEnabled;
           }
-          if (syncHourSelect && data.settings.syncHour !== undefined) {
-            syncHourSelect.value = String(data.settings.syncHour);
+          if (syncHourSelect) {
+            syncHourSelect.value = String(data.settings.syncHour !== undefined ? data.settings.syncHour : (currentChannelId === 'channel_1' ? 6 : 18));
           }
           if (privacySelect && data.settings.privacyStatus) {
             privacySelect.value = data.settings.privacyStatus;
@@ -5285,6 +5341,9 @@ function initShortsSyncModule() {
           if (data.settings.customOAuth) {
             if (customClientIdInput) customClientIdInput.value = data.settings.customOAuth.clientId || '';
             if (customClientSecretInput) customClientSecretInput.value = data.settings.customOAuth.clientSecret || '';
+          } else {
+            if (customClientIdInput) customClientIdInput.value = '';
+            if (customClientSecretInput) customClientSecretInput.value = '';
           }
         }
       }
@@ -5295,30 +5354,31 @@ function initShortsSyncModule() {
 
   function renderDestinationCard(destAcc) {
     if (!destTitle) return;
+    const chNamePrefix = currentChannelId === 'channel_1' ? 'Channel 1' : 'Channel 2';
     if (destAcc && destAcc.isConnected && destAcc.channel) {
       const ch = destAcc.channel;
-      destTitle.textContent = ch.title || 'Connected Channel';
+      destTitle.textContent = ch.title || `${chNamePrefix} Connected`;
       if (destCustomUrl) destCustomUrl.textContent = ch.customUrl || '';
       if (destSubCount) destSubCount.textContent = ch.subscriberCount ? `${Number(ch.subscriberCount).toLocaleString()} Subs` : '';
       if (destAvatar && ch.avatar) destAvatar.src = ch.avatar;
-      if (destName) destName.textContent = ch.title || 'Connected';
+      if (destName) destName.textContent = `${chNamePrefix}: ${ch.title || 'Connected'}`;
       if (destTypeBadge) {
         if (destAcc.isDedicated) {
-          destTypeBadge.textContent = 'Dedicated Upload Channel';
+          destTypeBadge.textContent = `${chNamePrefix} (Dedicated)`;
           destTypeBadge.style.background = 'rgba(16, 185, 129, 0.2)';
           destTypeBadge.style.color = '#10b981';
         } else {
-          destTypeBadge.textContent = 'Primary Bot Channel';
+          destTypeBadge.textContent = `${chNamePrefix} (Bot Default)`;
           destTypeBadge.style.background = 'rgba(59, 130, 246, 0.2)';
           destTypeBadge.style.color = '#60a5fa';
         }
       }
-      if (btnDisconnectDest) btnDisconnectDest.style.display = destAcc.isDedicated ? 'inline-flex' : 'none';
+      if (btnDisconnectDest) btnDisconnectDest.style.display = 'inline-flex';
     } else {
-      destTitle.textContent = 'No Channel Connected';
-      if (destCustomUrl) destCustomUrl.textContent = 'Please connect a channel to upload';
+      destTitle.textContent = `${chNamePrefix}: Not Connected`;
+      if (destCustomUrl) destCustomUrl.textContent = `Click "Connect / Switch Channel" to link a YouTube channel for ${chNamePrefix}`;
       if (destSubCount) destSubCount.textContent = '';
-      if (destName) destName.textContent = 'Not Connected';
+      if (destName) destName.textContent = `${chNamePrefix}: None`;
       if (destTypeBadge) {
         destTypeBadge.textContent = 'Disconnected';
         destTypeBadge.style.background = 'rgba(239, 68, 68, 0.2)';
@@ -5333,7 +5393,7 @@ function initShortsSyncModule() {
       const payload = {
         targetChannelUrl: targetUrlInput ? targetUrlInput.value.trim() : '',
         autoSyncEnabled: autoPilotToggle ? autoPilotToggle.checked : false,
-        syncHour: syncHourSelect ? parseInt(syncHourSelect.value, 10) : 18,
+        syncHour: syncHourSelect ? parseInt(syncHourSelect.value, 10) : (currentChannelId === 'channel_1' ? 6 : 18),
         privacyStatus: privacySelect ? privacySelect.value : 'public',
         appendShortsTag: appendTagCheckbox ? appendTagCheckbox.checked : true,
         ...extra
@@ -5341,12 +5401,43 @@ function initShortsSyncModule() {
       await fetch('/api/shorts-sync/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          channelId: currentChannelId,
+          settings: payload
+        })
       });
+
+      // Update local schedule badges
+      if (currentChannelId === 'channel_1' && ch1TimingBadge) {
+        ch1TimingBadge.textContent = formatHourLabel(payload.syncHour);
+      } else if (currentChannelId === 'channel_2' && ch2TimingBadge) {
+        ch2TimingBadge.textContent = formatHourLabel(payload.syncHour);
+      }
+      if (activeChannelSchedulePill) {
+        const chName = currentChannelId === 'channel_1' ? 'Channel 1' : 'Channel 2';
+        activeChannelSchedulePill.innerHTML = `<i class="fa-regular fa-clock" style="margin-right: 4px;"></i> ${chName} Scheduled: <b>${formatHourLabel(payload.syncHour)} Daily</b> ${payload.autoSyncEnabled ? '<span style="color: #34d399;">(ON)</span>' : '<span style="color: #f87171;">(OFF)</span>'}`;
+      }
     } catch (e) {
       console.error('Failed to save shorts sync settings:', e);
     }
   }
+
+  // Dual Channel Tabs Event Listener
+  document.querySelectorAll('.shorts-channel-tab-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const targetId = btn.dataset.channelId;
+      if (targetId === currentChannelId) return;
+      currentChannelId = targetId;
+      await fetch('/api/shorts-sync/active-channel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelId: currentChannelId })
+      });
+      await loadSettingsAndChannel(currentChannelId);
+      await loadHistory();
+      showToast(`Switched to ${currentChannelId === 'channel_1' ? 'Channel 1' : 'Channel 2'}`);
+    });
+  });
 
   async function loadHistory() {
     try {
@@ -5365,7 +5456,7 @@ function initShortsSyncModule() {
     if (!items || items.length === 0) {
       historyBody.innerHTML = `
         <tr>
-          <td colspan="6" style="text-align: center; padding: 25px; color: var(--text-muted);">
+          <td colspan="7" style="text-align: center; padding: 25px; color: var(--text-muted);">
             No shorts cloned yet. Paste a target channel URL above and click "Upload #1 Top Short Now".
           </td>
         </tr>`;
@@ -5375,9 +5466,18 @@ function initShortsSyncModule() {
     historyBody.innerHTML = items.map(item => {
       const dateStr = item.syncedAt ? new Date(item.syncedAt).toLocaleDateString() + ' ' + new Date(item.syncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent';
       const viewsFmt = item.sourceViews ? Number(item.sourceViews).toLocaleString() : 'N/A';
+      const chBadge = (item.channelId === 'channel_2')
+        ? `<span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); font-size: 11px; white-space: nowrap;"><i class="fa-solid fa-moon"></i> Channel 2 (Eve)</span>`
+        : `<span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 11px; white-space: nowrap;"><i class="fa-solid fa-sun"></i> Channel 1 (Morn)</span>`;
+      const destTitle = item.destinationChannelTitle ? `<div style="font-size: 10px; color: var(--text-muted); margin-top: 3px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(item.destinationChannelTitle)}</div>` : '';
+
       return `
         <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
           <td style="padding: 10px 14px; color: var(--text-muted); font-size: 12px;">${dateStr}</td>
+          <td style="padding: 10px 14px; vertical-align: middle;">
+            ${chBadge}
+            ${destTitle}
+          </td>
           <td style="padding: 10px 14px; font-weight: 600;">
             <a href="${item.sourceUrl}" target="_blank" style="color: #60a5fa; text-decoration: none; display: flex; align-items: center; gap: 6px;">
               <i class="fa-brands fa-youtube text-red"></i> ${escapeHtml(item.sourceTitle || 'Untitled')}
@@ -5461,7 +5561,7 @@ function initShortsSyncModule() {
       const res = await fetch('/api/shorts-sync/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channelUrl: url })
+        body: JSON.stringify({ channelUrl: url, channelId: currentChannelId })
       });
       const data = await res.json();
       if (!data.success) {
@@ -5633,7 +5733,7 @@ function initShortsSyncModule() {
       const res = await fetch('/api/shorts-sync/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channelUrl: url })
+        body: JSON.stringify({ channelUrl: url, channelId: currentChannelId })
       });
       const data = await res.json();
       if (!data.success) {
@@ -5662,11 +5762,16 @@ function initShortsSyncModule() {
 
   if (btnDisconnectDest) {
     btnDisconnectDest.addEventListener('click', async () => {
-      if (!confirm('Dedicated destination upload channel disconnect karna hai?')) return;
+      const chName = currentChannelId === 'channel_1' ? 'Channel 1' : 'Channel 2';
+      if (!confirm(`Dedicated destination upload channel for ${chName} disconnect karna hai?`)) return;
       try {
-        await fetch('/api/shorts-sync/destination/disconnect', { method: 'POST' });
-        showToast('Dedicated upload channel disconnected.');
-        loadSettingsAndChannel();
+        await fetch('/api/shorts-sync/destination/disconnect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ channelId: currentChannelId })
+        });
+        showToast(`${chName} upload channel disconnected.`);
+        loadSettingsAndChannel(currentChannelId);
       } catch (e) {
         showToast('Disconnect error: ' + e.message, true);
       }
@@ -5801,8 +5906,23 @@ function initShortsSyncModule() {
 
   // Socket.IO Real-time Events
   if (typeof socket !== 'undefined' && socket) {
-    socket.on('shortsDestinationAccountUpdated', destAcc => {
-      renderDestinationCard(destAcc);
+    socket.on('shortsDestinationAccountUpdated', data => {
+      if (data && data.channelId) {
+        if (channelsData[data.channelId]) {
+          channelsData[data.channelId].destinationAccount = data.destinationAccount;
+        }
+        if (data.channelId === currentChannelId) {
+          renderDestinationCard(data.destinationAccount);
+        }
+      } else {
+        renderDestinationCard(data);
+      }
+    });
+
+    socket.on('shortsSyncActiveChannelChanged', data => {
+      if (data && data.activeChannel && data.activeChannel !== currentChannelId) {
+        loadSettingsAndChannel(data.activeChannel);
+      }
     });
 
     socket.on('shortsSyncProgress', data => {
@@ -5851,9 +5971,29 @@ function initShortsSyncModule() {
       renderHistory(items);
     });
 
-    socket.on('shortsSyncSettingsUpdated', settings => {
-      if (autoPilotToggle && settings.autoSyncEnabled !== undefined) {
-        autoPilotToggle.checked = !!settings.autoSyncEnabled;
+    socket.on('shortsSyncSettingsUpdated', data => {
+      if (!data) return;
+      const chId = data.channelId;
+      const s = data.settings || {};
+      if (chId && channelsData[chId]) {
+        channelsData[chId].settings = s;
+      }
+      if (chId === 'channel_1' && ch1TimingBadge) {
+        ch1TimingBadge.textContent = formatHourLabel(s.syncHour !== undefined ? s.syncHour : 6);
+      } else if (chId === 'channel_2' && ch2TimingBadge) {
+        ch2TimingBadge.textContent = formatHourLabel(s.syncHour !== undefined ? s.syncHour : 18);
+      }
+      if (chId === currentChannelId) {
+        if (autoPilotToggle && s.autoSyncEnabled !== undefined) {
+          autoPilotToggle.checked = !!s.autoSyncEnabled;
+        }
+        if (syncHourSelect && s.syncHour !== undefined) {
+          syncHourSelect.value = String(s.syncHour);
+        }
+        if (activeChannelSchedulePill) {
+          const chName = currentChannelId === 'channel_1' ? 'Channel 1' : 'Channel 2';
+          activeChannelSchedulePill.innerHTML = `<i class="fa-regular fa-clock" style="margin-right: 4px;"></i> ${chName} Scheduled: <b>${formatHourLabel(s.syncHour !== undefined ? s.syncHour : (currentChannelId === 'channel_1' ? 6 : 18))} Daily</b> ${s.autoSyncEnabled ? '<span style="color: #34d399;">(ON)</span>' : '<span style="color: #f87171;">(OFF)</span>'}`;
+        }
       }
     });
   }

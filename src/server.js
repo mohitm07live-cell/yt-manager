@@ -185,16 +185,20 @@ const handleGoogleCallback = async (req, res) => {
   }
 
   try {
-    if (state === 'shorts_destination') {
-      await shortsAutoSyncService.handleDestinationOAuthCallback(code, req);
-      return res.redirect('/#shorts-sync?connected=true');
+    if (state && (state === 'shorts_destination' || state.startsWith('shorts_destination:'))) {
+      const parts = state.split(':');
+      const channelId = parts[1] || 'channel_1';
+      await shortsAutoSyncService.handleDestinationOAuthCallback(code, req, channelId);
+      return res.redirect(`/?connected=true&channelId=${channelId}#shorts-sync`);
     }
     await auth.handleCallback(code, req);
     res.redirect('/?auth=success');
   } catch (err) {
     console.error('OAuth Callback error:', err);
-    if (state === 'shorts_destination') {
-      return res.redirect(`/#shorts-sync?error=${encodeURIComponent(err.message)}`);
+    if (state && (state === 'shorts_destination' || state.startsWith('shorts_destination:'))) {
+      const parts = state.split(':');
+      const channelId = parts[1] || 'channel_1';
+      return res.redirect(`/?error=${encodeURIComponent(err.message)}&channelId=${channelId}#shorts-sync`);
     }
     res.redirect(`/?error=${encodeURIComponent(err.message)}`);
   }
@@ -205,7 +209,8 @@ app.get('/api/auth/google/callback', handleGoogleCallback);
 // Dedicated OAuth redirect for Shorts Destination Channel
 app.get(['/auth/shorts-destination/login', '/api/auth/shorts-destination/login'], (req, res) => {
   try {
-    const url = shortsAutoSyncService.getDestinationAuthUrl(req);
+    const channelId = req.query.channelId || 'channel_1';
+    const url = shortsAutoSyncService.getDestinationAuthUrl(req, channelId);
     res.redirect(url);
   } catch (err) {
     res.status(500).send(`Auth error: ${err.message}`);
@@ -1120,9 +1125,28 @@ app.post('/api/downloader/open-folder', (req, res) => {
 
 app.get('/api/shorts-sync/settings', (req, res) => {
   try {
-    const settings = shortsAutoSyncService.getSettings();
-    const destinationAccount = shortsAutoSyncService.getDestinationAccount();
-    res.json({ success: true, settings, destinationAccount });
+    const channelId = req.query.channelId || shortsAutoSyncService.getActiveChannelId();
+    const channelsSummary = shortsAutoSyncService.getChannelsSummary();
+    const settings = shortsAutoSyncService.getSettings(channelId);
+    const destinationAccount = shortsAutoSyncService.getDestinationAccount(channelId);
+    res.json({
+      success: true,
+      activeChannel: channelsSummary.activeChannel,
+      channels: channelsSummary.channels,
+      settings,
+      destinationAccount
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/shorts-sync/active-channel', (req, res) => {
+  try {
+    const { channelId } = req.body;
+    if (!channelId) return res.status(400).json({ error: 'channelId is required' });
+    const active = shortsAutoSyncService.setActiveChannelId(channelId);
+    res.json({ success: true, activeChannel: active });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1130,7 +1154,8 @@ app.get('/api/shorts-sync/settings', (req, res) => {
 
 app.post('/api/shorts-sync/destination/disconnect', (req, res) => {
   try {
-    shortsAutoSyncService.disconnectDestinationAccount();
+    const { channelId } = req.body;
+    shortsAutoSyncService.disconnectDestinationAccount(channelId);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1139,8 +1164,10 @@ app.post('/api/shorts-sync/destination/disconnect', (req, res) => {
 
 app.post('/api/shorts-sync/settings', (req, res) => {
   try {
-    const updated = shortsAutoSyncService.updateSettings(req.body);
-    res.json({ success: true, settings: updated });
+    const { channelId, settings } = req.body;
+    const targetChannelId = channelId || shortsAutoSyncService.getActiveChannelId();
+    const updated = shortsAutoSyncService.updateSettings(settings || req.body, targetChannelId);
+    res.json({ success: true, settings: updated, channelId: targetChannelId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1148,13 +1175,14 @@ app.post('/api/shorts-sync/settings', (req, res) => {
 
 app.post('/api/shorts-sync/scan', async (req, res) => {
   try {
-    const { channelUrl, limit } = req.body;
-    const target = channelUrl || shortsAutoSyncService.getSettings().targetChannelUrl;
+    const { channelUrl, limit, channelId } = req.body;
+    const targetChannelId = channelId || shortsAutoSyncService.getActiveChannelId();
+    const target = channelUrl || shortsAutoSyncService.getSettings(targetChannelId).targetChannelUrl;
     if (!target) {
       return res.status(400).json({ error: 'Target channel URL is required' });
     }
-    const shorts = await shortsAutoSyncService.scanChannelShorts(target, limit || 25);
-    res.json({ success: true, target, shorts });
+    const shorts = await shortsAutoSyncService.scanChannelShorts(target, limit || 25, targetChannelId);
+    res.json({ success: true, target, shorts, channelId: targetChannelId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1205,16 +1233,17 @@ app.get('/api/shorts-sync/status', (req, res) => {
 
 app.post('/api/shorts-sync/run', async (req, res) => {
   try {
-    const { channelUrl } = req.body;
-    shortsAutoSyncService.runSyncPipeline(channelUrl)
+    const { channelUrl, channelId } = req.body;
+    const targetChannelId = channelId || shortsAutoSyncService.getActiveChannelId();
+    shortsAutoSyncService.runSyncPipeline(targetChannelId, channelUrl)
       .then(entry => {
         io.emit('shortsSyncSuccess', entry);
       })
       .catch(err => {
-        io.emit('shortsSyncError', { error: err.message });
+        io.emit('shortsSyncError', { error: err.message, channelId: targetChannelId });
       });
 
-    res.json({ success: true, message: 'Shorts sync process started in background.' });
+    res.json({ success: true, message: `Shorts sync process started for ${targetChannelId}.`, channelId: targetChannelId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1222,7 +1251,7 @@ app.post('/api/shorts-sync/run', async (req, res) => {
 
 app.get('/api/shorts-sync/history', (req, res) => {
   try {
-    const history = shortsAutoSyncService.getHistory();
+    const history = shortsAutoSyncService.getHistory(req.query.channelId || null);
     res.json({ success: true, history });
   } catch (err) {
     res.status(500).json({ error: err.message });

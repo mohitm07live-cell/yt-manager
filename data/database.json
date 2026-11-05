@@ -73,7 +73,7 @@
       "enabled": true,
       "userLevel": "everyone",
       "cooldown": 5,
-      "usageCount": 7
+      "usageCount": 10
     },
     {
       "id": "cmd-2",
@@ -82,7 +82,7 @@
       "enabled": true,
       "userLevel": "everyone",
       "cooldown": 5,
-      "usageCount": 2
+      "usageCount": 3
     },
     {
       "id": "cmd-3",
@@ -129,7 +129,7 @@
       "intervalMinutes": 10,
       "minChatLines": 2,
       "enabled": true,
-      "lastTriggered": 1793876915099
+      "lastTriggered": 1793887033594
     },
     {
       "id": "timer-2",
@@ -138,7 +138,7 @@
       "intervalMinutes": 12,
       "minChatLines": 3,
       "enabled": true,
-      "lastTriggered": 1793873570789
+      "lastTriggered": 1793887273666
     },
     {
       "id": "timer-3",
@@ -147,7 +147,7 @@
       "intervalMinutes": 15,
       "minChatLines": 3,
       "enabled": true,
-      "lastTriggered": 0
+      "lastTriggered": 1793887314701
     },
     {
       "id": "timer-1789441088008",
@@ -3184,6 +3184,186 @@
       "author": "System",
       "action": null,
       "details": null
+    },
+    {
+      "id": "log-1793886853586-7qd1",
+      "timestamp": "2026-11-05T13:54:13.586Z",
+      "type": "system",
+      "message": "Bot Engine started. Searching for active live stream...",
+      "author": "System",
+      "action": null,
+      "details": null
+    },
+    {
+      "id": "log-1793887007733-x6tn",
+      "timestamp": "2026-11-05T13:56:47.733Z",
+      "type": "command",
+      "message": "@SpeedTester_0 triggered !discord -> \"🎮 Join Mohit M07's official Discord server: https://discord.gg/mkHSm7mrdT SpeedTester_0!\"",
+      "author": "SpeedTester_0",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793887008034-x5tg",
+      "timestamp": "2026-11-05T13:56:48.034Z",
+      "type": "command",
+      "message": "@HackerUser triggered !gamble -> \"@HackerUser, please specify a valid amount: !gamble <number> or !gamble all\"",
+      "author": "HackerUser",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793887008044-20wj",
+      "timestamp": "2026-11-05T13:56:48.044Z",
+      "type": "command",
+      "message": "@HackerUser triggered !gamble -> \"@HackerUser, please specify a valid amount: !gamble <number> or !gamble all\"",
+      "author": "HackerUser",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793887008054-i0ip",
+      "timestamp": "2026-11-05T13:56:48.054Z",
+      "type": "command",
+      "message": "@HackerUser triggered !gamble -> \"@HackerUser, please specify a valid amount: !gamble <number> or !gamble all\"",
+      "author": "HackerUser",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793887033603-8bic",
+      "timestamp": "2026-11-05T13:57:13.603Z",
+      "type": "timer",
+      "message": "Timer [Subscribe & Like Reminder] triggered: \"🔔 Enjoying the stream? Don't forget to Like, Subscribe & hit the Bell icon for alerts!\"",
+      "author": "System",
+      "action": null,
+      "details": null
+    },
+    {
+      "id": "log-1793887167573-a6dq",
+      "timestamp": "2026-11-05T13:59:27.573Z",
+      "type": "system",
+      "message": "[Auto Shorts] [Channel 1 (Morning)] Cloned & Uploaded: \"Neon Red Criminal Bundle Ko Free Mai Kaise Nikale 🤑💎 | Neon Red Criminal Bundle Free 🥳 #freefire\" -> https://www.youtube.com/shorts/cY4cXcqfZlM",
+      "author": "System",
+      "action": null,
+      "details": null
+    },
+    {
+      "id": "log-1793887259394-dr9b",
+      "timestamp": "2026-11-05T14:00:59.394Z",
+      "type": "command",
+      "message": "@StreamViewer99 triggered !discord -> \"🎮 Join Mohit M07's official Discord server: https://discord.gg/mkHSm7mrdT StreamViewer99!\"",
+      "author": "StreamViewer99",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793887259411-mrho",
+      "timestamp": "2026-11-05T14:00:59.411Z",
+      "type": "command",
+      "message": "@StreamViewer99 triggered !instagram -> \"📸 Follow Mohit M07 on Instagram: https://www.instagram.com/mohitm07live/ StreamViewer99!\"",
+      "author": "StreamViewer99",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793887259422-5wlw",
+      "timestamp": "2026-11-05T14:00:59.422Z",
+      "type": "command",
+      "message": "@StreamViewer99 triggered !points -> \"💰 @StreamViewer99, you currently have 75 Loyalty Points! Use !gamble or !spin to play! 💎\"",
+      "author": "StreamViewer99",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793887259433-e4ey",
+      "timestamp": "2026-11-05T14:00:59.433Z",
+      "type": "command",
+      "message": "@StreamViewer99 triggered !spin -> \"🎰 [ 💎 | ⭐ | 🍒 ] No match! @StreamViewer99 lost 25 pts. Balance: 55 pts.\"",
+      "author": "StreamViewer99",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793887259443-v21n",
+      "timestamp": "2026-11-05T14:00:59.443Z",
+      "type": "command",
+      "message": "@StreamViewer99 triggered !gamble -> \"🎉 WON! @StreamViewer99 rolled a WIN and gained +25 points! New Balance: 85 pts 💎\"",
+      "author": "StreamViewer99",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793887259454-4ilf",
+      "timestamp": "2026-11-05T14:00:59.454Z",
+      "type": "command",
+      "message": "@StreamViewer99 triggered !clip -> \"⏱️ CLIPPED! [00:00] \"Clutch Round 12\" by @StreamViewer99! 🎬\"",
+      "author": "StreamViewer99",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793887273674-x6re",
+      "timestamp": "2026-11-05T14:01:13.674Z",
+      "type": "timer",
+      "message": "Timer [Discord Community] triggered: \"💬 Join our official Discord community for daily stream schedules, voice chats & giveaways: https://discord.gg/mkHSm7mrdT\"",
+      "author": "System",
+      "action": null,
+      "details": null
+    },
+    {
+      "id": "log-1793887284697-f9et",
+      "timestamp": "2026-11-05T14:01:24.697Z",
+      "type": "system",
+      "message": "Bot Engine started. Searching for active live stream...",
+      "author": "System",
+      "action": null,
+      "details": null
+    },
+    {
+      "id": "log-1793887293738-0wsi",
+      "timestamp": "2026-11-05T14:01:33.738Z",
+      "type": "command",
+      "message": "@SpeedTester_0 triggered !discord -> \"🎮 Join Mohit M07's official Discord server: https://discord.gg/mkHSm7mrdT SpeedTester_0!\"",
+      "author": "SpeedTester_0",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793887294029-c4h2",
+      "timestamp": "2026-11-05T14:01:34.029Z",
+      "type": "command",
+      "message": "@HackerUser triggered !gamble -> \"@HackerUser, please specify a valid amount: !gamble <number> or !gamble all\"",
+      "author": "HackerUser",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793887294039-kvbr",
+      "timestamp": "2026-11-05T14:01:34.039Z",
+      "type": "command",
+      "message": "@HackerUser triggered !gamble -> \"@HackerUser, please specify a valid amount: !gamble <number> or !gamble all\"",
+      "author": "HackerUser",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793887294049-408f",
+      "timestamp": "2026-11-05T14:01:34.049Z",
+      "type": "command",
+      "message": "@HackerUser triggered !gamble -> \"@HackerUser, please specify a valid amount: !gamble <number> or !gamble all\"",
+      "author": "HackerUser",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793887314710-i9fa",
+      "timestamp": "2026-11-05T14:01:54.710Z",
+      "type": "timer",
+      "message": "Timer [Instagram Follow] triggered: \"📸 Follow Mohit M07 on Instagram for behind-the-scenes & stream clips: https://www.instagram.com/mohitm07live/\"",
+      "author": "System",
+      "action": null,
+      "details": null
     }
   ],
   "alertsConfig": {
@@ -3235,10 +3415,10 @@
     }
   },
   "stats": {
-    "totalMessagesProcessed": 303,
-    "totalCommandsExecuted": 9,
+    "totalMessagesProcessed": 415,
+    "totalCommandsExecuted": 13,
     "totalModerationActions": 0,
-    "totalTimersTriggered": 8,
+    "totalTimersTriggered": 11,
     "sessionStartTime": null
   },
   "quotaTracker": {

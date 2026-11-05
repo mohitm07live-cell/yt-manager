@@ -73,27 +73,73 @@ class ShortsAutoSyncService {
   }
 
   loadLedger() {
+    let ledger = null;
     try {
       if (fs.existsSync(this.ledgerFile)) {
         const raw = fs.readFileSync(this.ledgerFile, 'utf8');
-        return JSON.parse(raw);
+        ledger = JSON.parse(raw);
       }
     } catch (e) {
       console.error('[ShortsSync] Error reading ledger file:', e.message);
     }
-    return {
-      settings: {
-        targetChannelUrl: '',
-        autoSyncEnabled: false,
-        syncHour: 18, // 6:00 PM default
-        privacyStatus: 'public', // 'public' | 'unlisted' | 'private'
-        categoryId: '20', // 20 = Gaming, 24 = Entertainment
-        appendShortsTag: true,
-        lastSyncDate: null
-      },
-      destinationAccount: null,
-      history: []
-    };
+
+    if (!ledger) {
+      ledger = {
+        activeChannel: 'channel_1',
+        channels: {},
+        history: []
+      };
+    }
+
+    if (!ledger.channels) {
+      ledger.channels = {};
+    }
+
+    // Channel 1 (Morning e.g. 06:00 AM) - migrate existing single settings if present
+    if (!ledger.channels.channel_1) {
+      ledger.channels.channel_1 = {
+        id: 'channel_1',
+        name: 'Channel 1 (Morning)',
+        settings: ledger.settings || {
+          targetChannelUrl: '',
+          autoSyncEnabled: false,
+          syncHour: 6, // 6:00 AM default
+          privacyStatus: 'public',
+          categoryId: '20',
+          appendShortsTag: true,
+          lastSyncDate: null
+        },
+        destinationAccount: ledger.destinationAccount || null
+      };
+    }
+
+    // Channel 2 (Evening e.g. 06:00 PM)
+    if (!ledger.channels.channel_2) {
+      ledger.channels.channel_2 = {
+        id: 'channel_2',
+        name: 'Channel 2 (Evening)',
+        settings: {
+          targetChannelUrl: '',
+          autoSyncEnabled: false,
+          syncHour: 18, // 6:00 PM default
+          privacyStatus: 'public',
+          categoryId: '20',
+          appendShortsTag: true,
+          lastSyncDate: null
+        },
+        destinationAccount: null
+      };
+    }
+
+    if (!ledger.activeChannel) {
+      ledger.activeChannel = 'channel_1';
+    }
+
+    if (!ledger.history) {
+      ledger.history = [];
+    }
+
+    return ledger;
   }
 
   saveLedger() {
@@ -104,21 +150,82 @@ class ShortsAutoSyncService {
     }
   }
 
-  getSettings() {
-    return this.ledger.settings;
+  getChannel(channelId = null) {
+    const id = channelId || this.ledger.activeChannel || 'channel_1';
+    if (!this.ledger.channels[id]) {
+      this.ledger.channels[id] = {
+        id,
+        name: id === 'channel_1' ? 'Channel 1 (Morning)' : 'Channel 2 (Evening)',
+        settings: {
+          targetChannelUrl: '',
+          autoSyncEnabled: false,
+          syncHour: id === 'channel_1' ? 6 : 18,
+          privacyStatus: 'public',
+          categoryId: '20',
+          appendShortsTag: true,
+          lastSyncDate: null
+        },
+        destinationAccount: null
+      };
+      this.saveLedger();
+    }
+    return this.ledger.channels[id];
   }
 
-  updateSettings(newSettings) {
-    this.ledger.settings = { ...this.ledger.settings, ...newSettings };
+  getActiveChannelId() {
+    return this.ledger.activeChannel || 'channel_1';
+  }
+
+  setActiveChannelId(channelId) {
+    if (this.ledger.channels[channelId]) {
+      this.ledger.activeChannel = channelId;
+      this.saveLedger();
+      if (this.io) {
+        this.io.emit('shortsSyncActiveChannelChanged', {
+          activeChannel: channelId,
+          channel: this.getChannel(channelId)
+        });
+      }
+    }
+    return this.ledger.activeChannel;
+  }
+
+  getChannelsSummary() {
+    const res = {};
+    for (const [id, ch] of Object.entries(this.ledger.channels || {})) {
+      res[id] = {
+        id,
+        name: ch.name || id,
+        settings: ch.settings,
+        destinationAccount: this.getDestinationAccount(id)
+      };
+    }
+    return {
+      activeChannel: this.getActiveChannelId(),
+      channels: res
+    };
+  }
+
+  getSettings(channelId = null) {
+    return this.getChannel(channelId).settings;
+  }
+
+  updateSettings(newSettings, channelId = null) {
+    const ch = this.getChannel(channelId);
+    ch.settings = { ...ch.settings, ...newSettings };
     this.saveLedger();
     if (this.io) {
-      this.io.emit('shortsSyncSettingsUpdated', this.ledger.settings);
+      this.io.emit('shortsSyncSettingsUpdated', {
+        channelId: ch.id,
+        settings: ch.settings
+      });
     }
-    return this.ledger.settings;
+    return ch.settings;
   }
 
-  getClientCredentials() {
-    const custom = this.ledger.settings?.customOAuth;
+  getClientCredentials(channelId = null) {
+    const ch = this.getChannel(channelId);
+    const custom = ch.settings?.customOAuth || this.ledger.settings?.customOAuth;
     if (custom?.clientId && custom?.clientSecret) {
       return {
         clientId: custom.clientId.trim(),
@@ -134,11 +241,12 @@ class ShortsAutoSyncService {
   }
 
   /**
-   * Dedicated Destination Channel OAuth & Token Management
+   * Dedicated Destination Channel OAuth & Token Management per Channel
    */
-  getDestinationAuthUrl(req = null) {
+  getDestinationAuthUrl(req = null, channelId = null) {
+    const targetChannelId = channelId || this.getActiveChannelId();
     const redirectUri = auth.resolveRedirectUri(req);
-    const creds = this.getClientCredentials();
+    const creds = this.getClientCredentials(targetChannelId);
     const client = new google.auth.OAuth2(
       creds.clientId,
       creds.clientSecret,
@@ -150,25 +258,30 @@ class ShortsAutoSyncService {
           'https://www.googleapis.com/auth/youtube.upload',
           'https://www.googleapis.com/auth/youtube.force-ssl',
           'https://www.googleapis.com/auth/userinfo.profile',
-          'https://www.googleapis.com/auth/userinfo.email'
+          'https://www.googleapis.com/auth/userinfo.email',
+          'openid'
         ]
       : [
+          'https://www.googleapis.com/auth/youtube.upload',
           'https://www.googleapis.com/auth/youtube.force-ssl',
           'https://www.googleapis.com/auth/userinfo.profile',
-          'https://www.googleapis.com/auth/userinfo.email'
+          'https://www.googleapis.com/auth/userinfo.email',
+          'openid'
         ];
 
     return client.generateAuthUrl({
       access_type: 'offline',
       prompt: 'select_account consent',
-      state: 'shorts_destination',
+      state: `shorts_destination:${targetChannelId}`,
       scope: scopes
     });
   }
 
-  async handleDestinationOAuthCallback(code, req = null) {
+  async handleDestinationOAuthCallback(code, req = null, channelId = null) {
+    const targetChannelId = channelId || this.getActiveChannelId();
+    const ch = this.getChannel(targetChannelId);
     const redirectUri = auth.resolveRedirectUri(req);
-    const creds = this.getClientCredentials();
+    const creds = this.getClientCredentials(targetChannelId);
     const client = new google.auth.OAuth2(
       creds.clientId,
       creds.clientSecret,
@@ -180,22 +293,25 @@ class ShortsAutoSyncService {
 
     // Fetch channel info for THIS specific connected account
     const youtube = google.youtube({ version: 'v3', auth: client });
-    const chRes = await youtube.channels.list({
-      part: ['snippet', 'statistics'],
-      mine: true
-    });
-
     let channelInfo = null;
-    if (chRes.data?.items && chRes.data.items.length > 0) {
-      const ch = chRes.data.items[0];
-      channelInfo = {
-        id: ch.id,
-        title: ch.snippet.title,
-        customUrl: ch.snippet.customUrl || '',
-        avatar: ch.snippet.thumbnails?.default?.url || ch.snippet.thumbnails?.medium?.url || '',
-        subscriberCount: ch.statistics.subscriberCount || '0',
-        videoCount: ch.statistics.videoCount || '0'
-      };
+    try {
+      const chRes = await youtube.channels.list({
+        part: ['snippet', 'statistics'],
+        mine: true
+      });
+      if (chRes.data?.items && chRes.data.items.length > 0) {
+        const item = chRes.data.items[0];
+        channelInfo = {
+          id: item.id,
+          title: item.snippet.title,
+          customUrl: item.snippet.customUrl || '',
+          avatar: item.snippet.thumbnails?.default?.url || item.snippet.thumbnails?.medium?.url || '',
+          subscriberCount: item.statistics.subscriberCount || '0',
+          videoCount: item.statistics.videoCount || '0'
+        };
+      }
+    } catch (e) {
+      console.warn('[ShortsSync] Warning fetching channel info for destination:', e.message);
     }
 
     // Fetch user profile
@@ -211,7 +327,7 @@ class ShortsAutoSyncService {
       };
     } catch (e) {}
 
-    this.ledger.destinationAccount = {
+    ch.destinationAccount = {
       tokens,
       channelInfo,
       userProfile,
@@ -221,41 +337,51 @@ class ShortsAutoSyncService {
 
     db.addLog({
       type: 'system',
-      message: `[ShortsSync] Dedicated upload channel connected: ${channelInfo ? channelInfo.title : 'Custom Account'}`
+      message: `[ShortsSync] Destination channel connected for ${ch.name || targetChannelId}: ${channelInfo ? channelInfo.title : 'Custom Account'}`
     });
 
     if (this.io) {
-      this.io.emit('shortsDestinationAccountUpdated', this.getDestinationAccount());
+      this.io.emit('shortsDestinationAccountUpdated', {
+        channelId: targetChannelId,
+        destinationAccount: this.getDestinationAccount(targetChannelId)
+      });
     }
 
-    return this.ledger.destinationAccount;
+    return ch.destinationAccount;
   }
 
-  disconnectDestinationAccount() {
-    this.ledger.destinationAccount = null;
+  disconnectDestinationAccount(channelId = null) {
+    const targetChannelId = channelId || this.getActiveChannelId();
+    const ch = this.getChannel(targetChannelId);
+    ch.destinationAccount = null;
     this.saveLedger();
     db.addLog({
       type: 'system',
-      message: '[ShortsSync] Dedicated upload channel disconnected. Reverting to default.'
+      message: `[ShortsSync] Destination upload channel disconnected for ${ch.name || targetChannelId}.`
     });
     if (this.io) {
-      this.io.emit('shortsDestinationAccountUpdated', this.getDestinationAccount());
+      this.io.emit('shortsDestinationAccountUpdated', {
+        channelId: targetChannelId,
+        destinationAccount: this.getDestinationAccount(targetChannelId)
+      });
     }
   }
 
-  getDestinationAccount() {
-    if (this.ledger.destinationAccount?.channelInfo) {
+  getDestinationAccount(channelId = null) {
+    const targetChannelId = channelId || this.getActiveChannelId();
+    const ch = this.getChannel(targetChannelId);
+    if (ch.destinationAccount?.channelInfo) {
       return {
         isConnected: true,
         isDedicated: true,
-        channel: this.ledger.destinationAccount.channelInfo,
-        user: this.ledger.destinationAccount.userProfile,
-        connectedAt: this.ledger.destinationAccount.connectedAt
+        channel: ch.destinationAccount.channelInfo,
+        user: ch.destinationAccount.userProfile,
+        connectedAt: ch.destinationAccount.connectedAt
       };
     }
 
-    // Fallback to bot's primary authenticated channel
-    if (auth.isAuthenticated()) {
+    // Fallback to primary bot auth if channel_1 and no dedicated destination
+    if (targetChannelId === 'channel_1' && auth.isAuthenticated()) {
       return {
         isConnected: true,
         isDedicated: false,
@@ -274,20 +400,22 @@ class ShortsAutoSyncService {
     };
   }
 
-  getDestinationAuthClient() {
-    if (this.ledger.destinationAccount?.tokens) {
+  getDestinationAuthClient(channelId = null) {
+    const targetChannelId = channelId || this.getActiveChannelId();
+    const ch = this.getChannel(targetChannelId);
+    if (ch.destinationAccount?.tokens) {
       const redirectUri = auth.resolveRedirectUri();
-      const creds = this.getClientCredentials();
+      const creds = this.getClientCredentials(targetChannelId);
       const client = new google.auth.OAuth2(
         creds.clientId,
         creds.clientSecret,
         redirectUri
       );
-      client.setCredentials(this.ledger.destinationAccount.tokens);
+      client.setCredentials(ch.destinationAccount.tokens);
 
       client.on('tokens', (refreshedTokens) => {
-        const existing = this.ledger.destinationAccount.tokens || {};
-        this.ledger.destinationAccount.tokens = {
+        const existing = ch.destinationAccount.tokens || {};
+        ch.destinationAccount.tokens = {
           ...existing,
           ...refreshedTokens,
           refresh_token: refreshedTokens.refresh_token || existing.refresh_token
@@ -298,29 +426,39 @@ class ShortsAutoSyncService {
       return client;
     }
 
-    // Fallback to primary bot auth if no dedicated destination channel connected
-    if (auth.isAuthenticated()) {
+    // Fallback to primary bot auth if channel_1 and no dedicated destination
+    if (targetChannelId === 'channel_1' && auth.isAuthenticated()) {
       return auth.getOAuthClient();
     }
 
     return null;
   }
 
-  getHistory() {
-    return this.ledger.history || [];
+  getHistory(channelId = null) {
+    const hist = this.ledger.history || [];
+    if (!channelId) return hist;
+    return hist.filter(h => !h.channelId || h.channelId === channelId);
   }
 
-  isAlreadyProcessed(videoId) {
-    return this.ledger.history.some(item => item.sourceVideoId === videoId && item.status === 'success');
+  isAlreadyProcessed(videoId, channelId = null) {
+    return (this.ledger.history || []).some(item => {
+      if (item.sourceVideoId !== videoId || item.status !== 'success') return false;
+      if (channelId) {
+        return item.channelId === channelId || !item.channelId;
+      }
+      return true;
+    });
   }
 
   /**
    * Scan top performing shorts from target channel sorted by views
    */
-  async scanChannelShorts(channelUrl, limit = 20) {
+  async scanChannelShorts(channelUrl, limit = 20, channelId = null) {
     if (!channelUrl) {
       throw new Error('Target channel URL is required.');
     }
+
+    const targetChannelId = channelId || this.getActiveChannelId();
 
     let cleanUrl = channelUrl.trim();
     if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
@@ -379,7 +517,7 @@ class ShortsAutoSyncService {
             const views = data.view_count || 0;
             const title = data.title || 'Untitled Short';
             const url = `https://www.youtube.com/shorts/${videoId}`;
-            const isProcessed = this.isAlreadyProcessed(videoId);
+            const isProcessed = this.isAlreadyProcessed(videoId, targetChannelId);
 
             items.push({
               id: videoId,
@@ -590,10 +728,12 @@ class ShortsAutoSyncService {
   /**
    * Upload video to authenticated YouTube channel via Data API v3
    */
-  async uploadToYouTube(filePath, metadata, privacyStatus = 'public', categoryId = '20') {
-    const authClient = this.getDestinationAuthClient();
+  async uploadToYouTube(filePath, metadata, privacyStatus = 'public', categoryId = '20', channelId = null) {
+    const targetChannelId = channelId || this.getActiveChannelId();
+    const ch = this.getChannel(targetChannelId);
+    const authClient = this.getDestinationAuthClient(targetChannelId);
     if (!authClient) {
-      throw new Error('Destination YouTube channel is not connected. Please connect your YouTube account on the Auto Shorts page.');
+      throw new Error(`Destination YouTube channel for ${ch.name || targetChannelId} is not connected. Please connect your YouTube account.`);
     }
 
     const youtube = google.youtube({
@@ -603,7 +743,7 @@ class ShortsAutoSyncService {
 
     // Ensure title is <= 100 characters
     let title = metadata.title.trim();
-    if (this.ledger.settings.appendShortsTag && !/#shorts/i.test(title)) {
+    if (ch.settings?.appendShortsTag && !/#shorts/i.test(title)) {
       if (title.length <= 91) {
         title = `${title} #Shorts`;
       }
@@ -614,7 +754,7 @@ class ShortsAutoSyncService {
 
     // Prepare description
     let description = metadata.description || '';
-    if (this.ledger.settings.appendShortsTag && !/#shorts/i.test(description)) {
+    if (ch.settings?.appendShortsTag && !/#shorts/i.test(description)) {
       description = `${description}\n\n#Shorts #Viral #Trending`;
     }
 
@@ -628,10 +768,11 @@ class ShortsAutoSyncService {
     const fileSize = fs.statSync(filePath).size;
     const mediaStream = fs.createReadStream(filePath);
 
-    const targetChannelName = this.ledger.destinationAccount?.channelInfo?.title || 'Connected Channel';
+    const targetChannelName = ch.destinationAccount?.channelInfo?.title || ch.name || 'Connected Channel';
     this.emitProgress({
       stage: 'uploading',
       progress: 65,
+      channelId: targetChannelId,
       bytesUploaded: 0,
       totalBytes: fileSize,
       message: `Connecting to YouTube Data API v3 for channel: ${targetChannelName} (${(fileSize / (1024 * 1024)).toFixed(1)} MB)...`,
@@ -647,10 +788,10 @@ class ShortsAutoSyncService {
             title,
             description,
             tags,
-            categoryId: String(categoryId || '20')
+            categoryId: String(categoryId || ch.settings?.categoryId || '20')
           },
           status: {
-            privacyStatus: privacyStatus || 'public',
+            privacyStatus: privacyStatus || ch.settings?.privacyStatus || 'public',
             selfDeclaredMadeForKids: false
           }
         },
@@ -669,10 +810,11 @@ class ShortsAutoSyncService {
             this.emitProgress({
               stage: 'uploading',
               progress: pipelinePct,
+              channelId: targetChannelId,
               uploadPercent: uploadPct,
               bytesUploaded: bytesRead,
               totalBytes: fileSize,
-              message: `Uploading to YouTube: ${uploadPct}% (${(bytesRead / (1024 * 1024)).toFixed(1)} MB / ${(fileSize / (1024 * 1024)).toFixed(1)} MB)...`,
+              message: `Uploading to YouTube (${targetChannelName}): ${uploadPct}% (${(bytesRead / (1024 * 1024)).toFixed(1)} MB / ${(fileSize / (1024 * 1024)).toFixed(1)} MB)...`,
               title
             });
           }
@@ -696,14 +838,16 @@ class ShortsAutoSyncService {
   /**
    * Master execution pipeline: scans target channel, picks #1 un-uploaded short, downloads, and uploads.
    */
-  async runSyncPipeline(overrideChannelUrl = null) {
+  async runSyncPipeline(channelId = null, overrideChannelUrl = null) {
     if (this.isSyncing) {
       throw new Error('A sync process is already running. Please wait.');
     }
 
-    const targetUrl = overrideChannelUrl || this.ledger.settings.targetChannelUrl;
+    const targetChannelId = channelId || this.getActiveChannelId();
+    const ch = this.getChannel(targetChannelId);
+    const targetUrl = overrideChannelUrl || ch.settings?.targetChannelUrl;
     if (!targetUrl) {
-      throw new Error('Please configure a target channel URL first.');
+      throw new Error(`Please configure a target channel URL for ${ch.name || targetChannelId} first.`);
     }
 
     this.isSyncing = true;
@@ -713,11 +857,12 @@ class ShortsAutoSyncService {
       this.emitProgress({
         stage: 'scanning',
         progress: 5,
-        message: `Scanning top performing shorts from ${targetUrl}...`
+        channelId: targetChannelId,
+        message: `[${ch.name || targetChannelId}] Scanning top performing shorts from ${targetUrl}...`
       });
 
       // 1. Scan channel shorts
-      const shorts = await this.scanChannelShorts(targetUrl, 30);
+      const shorts = await this.scanChannelShorts(targetUrl, 30, targetChannelId);
       if (!shorts || shorts.length === 0) {
         throw new Error('No shorts found on the specified channel URL.');
       }
@@ -725,18 +870,20 @@ class ShortsAutoSyncService {
       this.emitProgress({
         stage: 'scanning',
         progress: 10,
+        channelId: targetChannelId,
         message: `Scanned ${shorts.length} shorts. Analyzing view counts to find #1 top short...`
       });
 
       // 2. Find top performing short not yet uploaded
       const candidate = shorts.find(s => !s.isProcessed);
       if (!candidate) {
-        throw new Error('All top performing shorts from this channel have already been synced!');
+        throw new Error(`All top performing shorts from this channel have already been synced for ${ch.name || targetChannelId}!`);
       }
 
       this.emitProgress({
         stage: 'downloading',
         progress: 15,
+        channelId: targetChannelId,
         message: `Selected #1 Top Short: "${candidate.title}" (${(candidate.views || 0).toLocaleString()} views). Preparing stream download...`,
         candidate
       });
@@ -753,6 +900,7 @@ class ShortsAutoSyncService {
       this.emitProgress({
         stage: 'processing',
         progress: 62,
+        channelId: targetChannelId,
         message: `Video downloaded (${(fs.statSync(downloadedFilePath).size / (1024 * 1024)).toFixed(1)} MB). Preparing YouTube metadata and tags...`,
         candidate
       });
@@ -761,13 +909,17 @@ class ShortsAutoSyncService {
       const uploadResult = await this.uploadToYouTube(
         downloadedFilePath,
         downloadResult.metadata,
-        this.ledger.settings.privacyStatus,
-        this.ledger.settings.categoryId
+        ch.settings?.privacyStatus || 'public',
+        ch.settings?.categoryId || '20',
+        targetChannelId
       );
 
       // 5. Update ledger history
       const historyEntry = {
         id: `sync-${Date.now()}`,
+        channelId: targetChannelId,
+        channelName: ch.name || (targetChannelId === 'channel_1' ? 'Channel 1' : 'Channel 2'),
+        destinationChannelTitle: ch.destinationAccount?.channelInfo?.title || 'Connected Channel',
         sourceVideoId: candidate.id,
         sourceTitle: candidate.title,
         sourceViews: candidate.views,
@@ -781,19 +933,20 @@ class ShortsAutoSyncService {
       };
 
       this.ledger.history.unshift(historyEntry);
-      this.ledger.settings.lastSyncDate = new Date().toISOString().split('T')[0];
+      ch.settings.lastSyncDate = this.getIndianTime().todayStr;
       this.saveLedger();
 
       // Log to system DB
       db.addLog({
         type: 'system',
-        message: `[Auto Shorts] Cloned & Uploaded: "${candidate.title}" -> ${uploadResult.uploadedUrl}`
+        message: `[Auto Shorts] [${ch.name || targetChannelId}] Cloned & Uploaded: "${candidate.title}" -> ${uploadResult.uploadedUrl}`
       });
 
       this.emitProgress({
         stage: 'completed',
         progress: 100,
-        message: `🎉 Successfully uploaded! Short is live at ${uploadResult.uploadedUrl}`,
+        channelId: targetChannelId,
+        message: `🎉 Successfully uploaded to ${ch.name || targetChannelId}! Live at ${uploadResult.uploadedUrl}`,
         candidate,
         historyEntry
       });
@@ -808,11 +961,12 @@ class ShortsAutoSyncService {
       this.emitProgress({
         stage: 'error',
         progress: 0,
+        channelId: targetChannelId,
         message: `Sync failed: ${err.message}`,
         error: err.message
       });
       if (this.io) {
-        this.io.emit('shortsSyncError', { error: err.message });
+        this.io.emit('shortsSyncError', { error: err.message, channelId: targetChannelId });
       }
       throw err;
     } finally {
@@ -827,31 +981,67 @@ class ShortsAutoSyncService {
   }
 
   /**
-   * Hourly check for daily automated sync
+   * Helper to get IST (Asia/Kolkata) Date & Hour regardless of server host timezone (e.g. Render UTC)
+   */
+  getIndianTime(date = new Date()) {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: 'numeric',
+        hourCycle: 'h23'
+      });
+      const parts = formatter.formatToParts(date);
+      const m = {};
+      for (const p of parts) m[p.type] = p.value;
+      return {
+        todayStr: `${m.year}-${m.month}-${m.day}`,
+        currentHour: parseInt(m.hour, 10)
+      };
+    } catch (e) {
+      return {
+        todayStr: date.toISOString().split('T')[0],
+        currentHour: date.getHours()
+      };
+    }
+  }
+
+  /**
+   * Hourly check for daily automated sync across all configured channels
    */
   initScheduler() {
     if (this.schedulerTimer) clearInterval(this.schedulerTimer);
 
-    // Check every 15 minutes
-    this.schedulerTimer = setInterval(() => {
+    // Check every 5 minutes
+    this.schedulerTimer = setInterval(async () => {
       try {
-        const { autoSyncEnabled, syncHour, lastSyncDate, targetChannelUrl } = this.ledger.settings;
-        if (!autoSyncEnabled || !targetChannelUrl) return;
+        const { todayStr, currentHour } = this.getIndianTime();
 
-        const now = new Date();
-        const currentHour = now.getHours();
-        const todayStr = now.toISOString().split('T')[0];
+        const channelIds = Object.keys(this.ledger.channels || {});
+        for (const chId of channelIds) {
+          const ch = this.ledger.channels[chId];
+          if (!ch || !ch.settings) continue;
 
-        if (currentHour >= (syncHour || 18) && lastSyncDate !== todayStr && !this.isSyncing) {
-          console.log(`[ShortsSync] Daily auto-pilot triggered for ${targetChannelUrl}`);
-          this.runSyncPipeline().catch(e => {
-            console.error('[ShortsSync] Scheduled sync failed:', e.message);
-          });
+          const { autoSyncEnabled, syncHour, lastSyncDate, targetChannelUrl } = ch.settings;
+          if (!autoSyncEnabled || !targetChannelUrl) continue;
+
+          const targetHour = syncHour !== undefined ? Number(syncHour) : (chId === 'channel_1' ? 6 : 18);
+
+          if (currentHour >= targetHour && lastSyncDate !== todayStr && !this.isSyncing) {
+            console.log(`[ShortsSync] Scheduled auto-pilot triggered for ${ch.name || chId} (IST scheduled: ${targetHour}:00, IST current: ${currentHour}:00)`);
+            try {
+              await this.runSyncPipeline(chId);
+            } catch (err) {
+              console.error(`[ShortsSync] Scheduled sync failed for ${chId}:`, err.message);
+            }
+          }
         }
       } catch (e) {
         console.error('[ShortsSync] Scheduler error:', e.message);
       }
-    }, 15 * 60 * 1000);
+    }, 5 * 60 * 1000);
 
     if (this.schedulerTimer.unref) {
       this.schedulerTimer.unref();

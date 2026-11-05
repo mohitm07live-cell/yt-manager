@@ -293,10 +293,20 @@ class VideoDownloaderService {
    */
   sanitizeNetscapeCookies(raw) {
     if (!raw || typeof raw !== 'string') return null;
-    const trimmed = raw.trim();
+    let trimmed = raw.trim();
     // Detect if someone just passed a filename like "cookies.txt"
     if (/^[\w,\s-]+\.(txt|json|cookie)$/i.test(trimmed)) {
       return null;
+    }
+
+    // Support Base64 encoded cookies
+    if (!trimmed.includes('\n') && !trimmed.includes('\t') && trimmed.length > 50 && /^[A-Za-z0-9+/=]+$/.test(trimmed)) {
+      try {
+        const decoded = Buffer.from(trimmed, 'base64').toString('utf8');
+        if (decoded.includes('.youtube.com') || decoded.includes('Netscape') || decoded.includes('\t')) {
+          trimmed = decoded.trim();
+        }
+      } catch (e) {}
     }
 
     const lines = trimmed.split(/\r?\n/);
