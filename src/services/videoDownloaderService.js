@@ -289,20 +289,49 @@ class VideoDownloaderService {
   }
 
   /**
-   * Look for optional cookies file for Instagram/YouTube authentication if provided
+   * Look for optional cookies file or generate YouTube client bypass arguments
    */
-  getCookiesArgument() {
+  getYtDlpBypassArgs(platform = 'youtube') {
+    const args = [];
+    if (platform === 'youtube') {
+      args.push(
+        '--extractor-args', 'youtube:player_client=android,ios,mweb',
+        '--js-runtimes', 'node'
+      );
+    }
+
     const candidateFiles = [
       path.join(process.cwd(), 'cookies.txt'),
-      path.join(process.cwd(), 'instagram_cookies.txt'),
+      path.join(process.cwd(), 'youtube_cookies.txt'),
+      path.join(process.cwd(), 'data', 'cookies.txt'),
+      path.join(process.cwd(), 'data', 'youtube_cookies.txt'),
       path.join(this.downloadsDir, 'cookies.txt')
     ];
+
+    // Auto-create cookies.txt if provided via Render environment variable
+    const envCookies = process.env.YOUTUBE_COOKIES || process.env.COOKIES_CONTENT;
+    const autoCookiePath = path.join(process.cwd(), 'data', 'cookies.txt');
+    if (envCookies && !fs.existsSync(autoCookiePath)) {
+      try {
+        fs.writeFileSync(autoCookiePath, envCookies, 'utf8');
+      } catch (e) {}
+    }
+
     for (const f of candidateFiles) {
       if (fs.existsSync(f)) {
-        return ['--cookies', f];
+        try {
+          if (fs.statSync(f).size > 10) {
+            args.push('--cookies', f);
+            break;
+          }
+        } catch (e) {}
       }
     }
-    return [];
+    return args;
+  }
+
+  getCookiesArgument() {
+    return this.getYtDlpBypassArgs('generic');
   }
 
   /**
@@ -320,14 +349,15 @@ class VideoDownloaderService {
         '--no-warnings'
       );
 
+      // Add platform client bypass (Android/iOS for YouTube)
+      const bypassArgs = this.getYtDlpBypassArgs(platform);
+      args.push(...bypassArgs);
+
       // Add platform specific headers
       if (platform === 'instagram') {
         args.push('--add-header', 'Referer:https://www.instagram.com/');
         args.push('--add-header', 'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36');
       }
-
-      // Add cookies if available
-      const cookieArgs = this.getCookiesArgument();
       if (cookieArgs.length > 0) {
         args.push(...cookieArgs);
       }
@@ -492,10 +522,10 @@ class VideoDownloaderService {
       args.push('--add-header', 'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36');
     }
 
-    // Optional cookies
-    const cookieArgs = this.getCookiesArgument();
-    if (cookieArgs.length > 0) {
-      args.push(...cookieArgs);
+    // Platform client bypass & optional cookies
+    const bypassArgs = this.getYtDlpBypassArgs(platform);
+    if (bypassArgs.length > 0) {
+      args.push(...bypassArgs);
     }
 
     if (isAudioOnly) {

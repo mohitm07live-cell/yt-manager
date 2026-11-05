@@ -397,19 +397,30 @@ class ShortsAutoSyncService {
     });
   }
 
+  getYtDlpBypassArgs() {
+    return videoDownloaderService.getYtDlpBypassArgs('youtube');
+  }
+
   /**
    * Download a short and extract its rich metadata (tags, title, description)
    */
-  async downloadShortWithMetadata(videoId) {
+  async downloadShortWithMetadata(videoId, fallbackMetadata = {}) {
     const videoUrl = `https://www.youtube.com/shorts/${videoId}`;
     const ytDlp = videoDownloaderService.resolveYtDlpBinary();
     const ffmpegExe = videoDownloaderService.getFFmpegExe();
+    const bypassArgs = this.getYtDlpBypassArgs();
 
     const outputTemplate = path.join(this.tempDownloadDir, `${videoId}_%(title).50s.%(ext)s`);
 
-    // 1. Fetch full metadata JSON
-    const metadata = await new Promise((resolve, reject) => {
-      const args = ['-j', '--skip-download', videoUrl];
+    // 1. Fetch full metadata JSON (with graceful fallback if YouTube warns or throttles metadata endpoint)
+    const metadata = await new Promise((resolve) => {
+      const args = [
+        ...bypassArgs,
+        '-j',
+        '--skip-download',
+        '--no-warnings',
+        videoUrl
+      ];
       let stdout = '';
       let stderr = '';
 
@@ -421,20 +432,26 @@ class ShortsAutoSyncService {
       child.stderr.on('data', chunk => { stderr += chunk.toString(); });
 
       child.on('close', code => {
-        if (code !== 0 || !stdout.trim()) {
-          return reject(new Error(`Failed to extract metadata: ${stderr}`));
+        if (code === 0 && stdout.trim()) {
+          try {
+            const parsed = JSON.parse(stdout);
+            return resolve(parsed);
+          } catch (e) {}
         }
-        try {
-          const parsed = JSON.parse(stdout);
-          resolve(parsed);
-        } catch (e) {
-          reject(new Error(`Failed to parse metadata JSON: ${e.message}`));
-        }
+        console.warn(`[ShortsSync] Metadata fetch warning, using candidate metadata: ${stderr.substring(0, 150)}...`);
+        resolve({
+          title: fallbackMetadata.title || 'Viral Gaming Short',
+          description: fallbackMetadata.description || '',
+          tags: fallbackMetadata.tags || ['Shorts', 'FreeFire', 'Gaming'],
+          view_count: fallbackMetadata.views || 0,
+          id: videoId
+        });
       });
     });
 
-    // 2. Download highest quality video + audio merged to mp4
+    // 2. Download highest quality video + audio merged to mp4 using mobile player bypass
     const downloadArgs = [
+      ...bypassArgs,
       '-f', 'bestvideo*+bestaudio/best',
       '--merge-output-format', 'mp4',
       '--windows-filenames',
@@ -677,7 +694,12 @@ class ShortsAutoSyncService {
       });
 
       // 3. Download video in highest quality + metadata
-      const downloadResult = await this.downloadShortWithMetadata(candidate.id);
+      const downloadResult = await this.downloadShortWithMetadata(candidate.id, {
+        title: candidate.title,
+        views: candidate.views,
+        id: candidate.id,
+        url: candidate.url
+      });
       downloadedFilePath = downloadResult.filePath;
 
       this.emitProgress({
