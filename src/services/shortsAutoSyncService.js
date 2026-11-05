@@ -400,24 +400,37 @@ class ShortsAutoSyncService {
   }
 
   saveCookies(cookiesText) {
+    const trimmed = cookiesText.trim();
     const cookiePath = path.join(process.cwd(), 'data', 'cookies.txt');
-    fs.writeFileSync(cookiePath, cookiesText.trim(), 'utf8');
-    return { success: true, size: cookiesText.length };
+    fs.writeFileSync(cookiePath, trimmed, 'utf8');
+    try {
+      fs.writeFileSync(path.join(process.cwd(), 'cookies.txt'), trimmed, 'utf8');
+    } catch (e) {}
+    return { success: true, size: trimmed.length };
   }
 
   getCookiesStatus() {
-    const cookiePath = path.join(process.cwd(), 'data', 'cookies.txt');
-    const hasCookies = fs.existsSync(cookiePath) && fs.statSync(cookiePath).size > 10;
-    return {
-      hasCookies,
-      size: hasCookies ? fs.statSync(cookiePath).size : 0
-    };
+    const candidateFiles = [
+      path.join(process.cwd(), 'data', 'cookies.txt'),
+      path.join(process.cwd(), 'cookies.txt')
+    ];
+    for (const f of candidateFiles) {
+      if (fs.existsSync(f) && fs.statSync(f).size > 10) {
+        return { hasCookies: true, size: fs.statSync(f).size, path: f };
+      }
+    }
+    return { hasCookies: false, size: 0 };
   }
 
   deleteCookies() {
-    const cookiePath = path.join(process.cwd(), 'data', 'cookies.txt');
-    if (fs.existsSync(cookiePath)) {
-      fs.unlinkSync(cookiePath);
+    const candidateFiles = [
+      path.join(process.cwd(), 'data', 'cookies.txt'),
+      path.join(process.cwd(), 'cookies.txt')
+    ];
+    for (const f of candidateFiles) {
+      if (fs.existsSync(f)) {
+        try { fs.unlinkSync(f); } catch (e) {}
+      }
     }
     return { success: true };
   }
@@ -534,7 +547,11 @@ class ShortsAutoSyncService {
       child.stderr.on('data', chunk => { stderr += chunk.toString(); });
       child.on('close', code => {
         if (code !== 0) {
-          return reject(new Error(`Video download failed: ${stderr || 'Unknown error'}`));
+          let errorDetail = stderr || 'Unknown error';
+          if (/Sign in to confirm you’re not a bot|HTTP Error 429/i.test(stderr)) {
+            errorDetail = `YouTube Bot Verification Triggered on Cloud Server (Datacenter IP Block). Click "Anti-Bot Cookies" above and paste your browser YouTube cookies.txt to bypass. [Details: ${stderr.substring(0, 180)}]`;
+          }
+          return reject(new Error(`Video download failed: ${errorDetail}`));
         }
         resolve();
       });

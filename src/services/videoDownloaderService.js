@@ -295,27 +295,34 @@ class VideoDownloaderService {
     const args = [];
     if (platform === 'youtube') {
       args.push(
+        '-4',
         '--js-runtimes', 'node',
-        '--extractor-args', 'youtube:player_client=android;player_skip=webpage,configs'
+        '--extractor-args', 'youtube:player_client=android,mweb;player_skip=webpage,configs'
       );
     }
 
-    const candidateFiles = [
-      path.join(process.cwd(), 'cookies.txt'),
-      path.join(process.cwd(), 'youtube_cookies.txt'),
-      path.join(process.cwd(), 'data', 'cookies.txt'),
-      path.join(process.cwd(), 'data', 'youtube_cookies.txt'),
-      path.join(this.downloadsDir, 'cookies.txt')
-    ];
+    const autoCookiePath = path.join(process.cwd(), 'data', 'cookies.txt');
 
     // Auto-create cookies.txt if provided via Render environment variable
     const envCookies = process.env.YOUTUBE_COOKIES || process.env.COOKIES_CONTENT;
-    const autoCookiePath = path.join(process.cwd(), 'data', 'cookies.txt');
-    if (envCookies && !fs.existsSync(autoCookiePath)) {
+    if (envCookies) {
       try {
-        fs.writeFileSync(autoCookiePath, envCookies, 'utf8');
+        if (!fs.existsSync(path.dirname(autoCookiePath))) {
+          fs.mkdirSync(path.dirname(autoCookiePath), { recursive: true });
+        }
+        if (!fs.existsSync(autoCookiePath) || fs.readFileSync(autoCookiePath, 'utf8') !== envCookies) {
+          fs.writeFileSync(autoCookiePath, envCookies, 'utf8');
+        }
       } catch (e) {}
     }
+
+    const candidateFiles = [
+      autoCookiePath,
+      path.join(process.cwd(), 'cookies.txt'),
+      path.join(process.cwd(), 'youtube_cookies.txt'),
+      path.join(process.cwd(), 'data', 'youtube_cookies.txt'),
+      path.join(this.downloadsDir, 'cookies.txt')
+    ];
 
     for (const f of candidateFiles) {
       if (fs.existsSync(f)) {
