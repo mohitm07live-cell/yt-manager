@@ -295,8 +295,8 @@ class VideoDownloaderService {
     const args = [];
     if (platform === 'youtube') {
       args.push(
-        '--extractor-args', 'youtube:player_client=android,ios,mweb',
-        '--js-runtimes', 'node'
+        '--js-runtimes', 'node',
+        '--extractor-args', 'youtube:player_client=android;player_skip=webpage,configs'
       );
     }
 
@@ -357,9 +357,6 @@ class VideoDownloaderService {
       if (platform === 'instagram') {
         args.push('--add-header', 'Referer:https://www.instagram.com/');
         args.push('--add-header', 'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36');
-      }
-      if (cookieArgs.length > 0) {
-        args.push(...cookieArgs);
       }
 
       args.push(url);

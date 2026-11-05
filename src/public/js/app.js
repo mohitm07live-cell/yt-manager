@@ -5236,6 +5236,15 @@ function initShortsSyncModule() {
   const btnSaveCustomOAuth = document.getElementById('btnSaveCustomOAuth');
   const btnResetCustomOAuth = document.getElementById('btnResetCustomOAuth');
 
+  // Anti-Bot Cookies elements
+  const btnToggleCookies = document.getElementById('btnToggleCookies');
+  const shortsCookiesBox = document.getElementById('shortsCookiesBox');
+  const cookiesTextarea = document.getElementById('cookiesTextarea');
+  const btnSaveCookies = document.getElementById('btnSaveCookies');
+  const btnDeleteCookies = document.getElementById('btnDeleteCookies');
+  const cookieStatusLabel = document.getElementById('cookieStatusLabel');
+  const cookieBadgeStatus = document.getElementById('cookieBadgeStatus');
+
   if (!btnScan || !btnRunSync) return;
 
   // Handle OAuth return redirect toasts
@@ -5697,6 +5706,94 @@ function initShortsSyncModule() {
           showToast('Reset to default bot credentials.');
         } catch (e) {
           showToast('Failed to reset: ' + e.message, true);
+        }
+      });
+    }
+
+    async function refreshCookieStatus() {
+      try {
+        const res = await fetch('/api/shorts-sync/cookies');
+        const data = await res.json();
+        if (data.hasCookies) {
+          if (cookieBadgeStatus) {
+            cookieBadgeStatus.textContent = 'Active';
+            cookieBadgeStatus.style.background = 'rgba(16, 185, 129, 0.2)';
+            cookieBadgeStatus.style.color = '#34d399';
+          }
+          if (cookieStatusLabel) {
+            const kb = (data.size / 1024).toFixed(1);
+            cookieStatusLabel.innerHTML = `<span style="color: #34d399; font-weight: 700;">● Active (${kb} KB Cookies Loaded)</span>`;
+          }
+        } else {
+          if (cookieBadgeStatus) {
+            cookieBadgeStatus.textContent = 'None';
+            cookieBadgeStatus.style.background = 'rgba(239, 68, 68, 0.2)';
+            cookieBadgeStatus.style.color = '#f87171';
+          }
+          if (cookieStatusLabel) {
+            cookieStatusLabel.innerHTML = `<span style="color: #94a3b8;">○ No Cookies (Using Mobile Client Bypass)</span>`;
+          }
+        }
+      } catch (e) {
+        console.warn('Cookie status check error:', e);
+      }
+    }
+
+    refreshCookieStatus();
+
+    if (btnToggleCookies && shortsCookiesBox) {
+      btnToggleCookies.addEventListener('click', () => {
+        const isHidden = shortsCookiesBox.style.display === 'none' || !shortsCookiesBox.style.display;
+        shortsCookiesBox.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) refreshCookieStatus();
+      });
+    }
+
+    if (btnSaveCookies) {
+      btnSaveCookies.addEventListener('click', async () => {
+        const text = cookiesTextarea ? cookiesTextarea.value.trim() : '';
+        if (!text || text.length < 10) {
+          showToast('Please paste valid Netscape cookies.txt content.', true);
+          return;
+        }
+        btnSaveCookies.disabled = true;
+        btnSaveCookies.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving...`;
+        try {
+          const res = await fetch('/api/shorts-sync/cookies', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cookiesText: text })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast('✅ Anti-bot cookies saved successfully!');
+            if (cookiesTextarea) cookiesTextarea.value = '';
+            await refreshCookieStatus();
+          } else {
+            showToast('Failed to save cookies: ' + (data.error || 'Unknown error'), true);
+          }
+        } catch (e) {
+          showToast('Failed to save cookies: ' + e.message, true);
+        } finally {
+          btnSaveCookies.disabled = false;
+          btnSaveCookies.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Save Cookies`;
+        }
+      });
+    }
+
+    if (btnDeleteCookies) {
+      btnDeleteCookies.addEventListener('click', async () => {
+        if (!confirm('Are you sure you want to remove saved YouTube cookies?')) return;
+        try {
+          const res = await fetch('/api/shorts-sync/cookies', { method: 'DELETE' });
+          const data = await res.json();
+          if (data.success) {
+            showToast('Cookies removed.');
+            if (cookiesTextarea) cookiesTextarea.value = '';
+            await refreshCookieStatus();
+          }
+        } catch (e) {
+          showToast('Failed to delete cookies: ' + e.message, true);
         }
       });
     }

@@ -1160,6 +1160,37 @@ app.post('/api/shorts-sync/scan', async (req, res) => {
   }
 });
 
+app.get('/api/shorts-sync/cookies', (req, res) => {
+  try {
+    const status = shortsAutoSyncService.getCookiesStatus();
+    res.json({ success: true, ...status });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/shorts-sync/cookies', (req, res) => {
+  try {
+    const { cookiesText } = req.body;
+    if (!cookiesText || typeof cookiesText !== 'string' || cookiesText.trim().length < 10) {
+      return res.status(400).json({ error: 'Please paste valid Netscape cookies.txt content.' });
+    }
+    const result = shortsAutoSyncService.saveCookies(cookiesText);
+    res.json({ success: true, message: 'Cookies saved successfully!', ...result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/shorts-sync/cookies', (req, res) => {
+  try {
+    const result = shortsAutoSyncService.deleteCookies();
+    res.json({ success: true, message: 'Cookies removed successfully.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/shorts-sync/status', (req, res) => {
   try {
     const state = shortsAutoSyncService.getSyncState();

@@ -336,7 +336,9 @@ class ShortsAutoSyncService {
     }
 
     const ytDlp = videoDownloaderService.resolveYtDlpBinary();
+    const bypassArgs = this.getYtDlpBypassArgs();
     const args = [
+      ...bypassArgs,
       '--flat-playlist',
       '-j',
       '--playlist-end', String(limit),
@@ -397,6 +399,29 @@ class ShortsAutoSyncService {
     });
   }
 
+  saveCookies(cookiesText) {
+    const cookiePath = path.join(process.cwd(), 'data', 'cookies.txt');
+    fs.writeFileSync(cookiePath, cookiesText.trim(), 'utf8');
+    return { success: true, size: cookiesText.length };
+  }
+
+  getCookiesStatus() {
+    const cookiePath = path.join(process.cwd(), 'data', 'cookies.txt');
+    const hasCookies = fs.existsSync(cookiePath) && fs.statSync(cookiePath).size > 10;
+    return {
+      hasCookies,
+      size: hasCookies ? fs.statSync(cookiePath).size : 0
+    };
+  }
+
+  deleteCookies() {
+    const cookiePath = path.join(process.cwd(), 'data', 'cookies.txt');
+    if (fs.existsSync(cookiePath)) {
+      fs.unlinkSync(cookiePath);
+    }
+    return { success: true };
+  }
+
   getYtDlpBypassArgs() {
     return videoDownloaderService.getYtDlpBypassArgs('youtube');
   }
@@ -452,7 +477,7 @@ class ShortsAutoSyncService {
     // 2. Download highest quality video + audio merged to mp4 using mobile player bypass
     const downloadArgs = [
       ...bypassArgs,
-      '-f', 'bestvideo*+bestaudio/best',
+      '-f', 'bestvideo*+bestaudio/best/18',
       '--merge-output-format', 'mp4',
       '--windows-filenames',
       '--no-mtime',

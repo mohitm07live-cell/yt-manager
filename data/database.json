@@ -73,7 +73,7 @@
       "enabled": true,
       "userLevel": "everyone",
       "cooldown": 5,
-      "usageCount": 5
+      "usageCount": 7
     },
     {
       "id": "cmd-2",
@@ -129,7 +129,7 @@
       "intervalMinutes": 10,
       "minChatLines": 2,
       "enabled": true,
-      "lastTriggered": 1793873189789
+      "lastTriggered": 1793876915099
     },
     {
       "id": "timer-2",
@@ -3067,6 +3067,123 @@
       "author": "System",
       "action": null,
       "details": null
+    },
+    {
+      "id": "log-1793876023989-bvrc",
+      "timestamp": "2026-11-05T10:53:43.989Z",
+      "type": "system",
+      "message": "Bot Engine started. Searching for active live stream...",
+      "author": "System",
+      "action": null,
+      "details": null
+    },
+    {
+      "id": "log-1793876031418-m9tb",
+      "timestamp": "2026-11-05T10:53:51.418Z",
+      "type": "command",
+      "message": "@SpeedTester_0 triggered !discord -> \"🎮 Join Mohit M07's official Discord server: https://discord.gg/mkHSm7mrdT SpeedTester_0!\"",
+      "author": "SpeedTester_0",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793876031696-9dlf",
+      "timestamp": "2026-11-05T10:53:51.696Z",
+      "type": "command",
+      "message": "@HackerUser triggered !gamble -> \"@HackerUser, please specify a valid amount: !gamble <number> or !gamble all\"",
+      "author": "HackerUser",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793876031705-sd7u",
+      "timestamp": "2026-11-05T10:53:51.705Z",
+      "type": "command",
+      "message": "@HackerUser triggered !gamble -> \"@HackerUser, please specify a valid amount: !gamble <number> or !gamble all\"",
+      "author": "HackerUser",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793876031713-1jbh",
+      "timestamp": "2026-11-05T10:53:51.713Z",
+      "type": "command",
+      "message": "@HackerUser triggered !gamble -> \"@HackerUser, please specify a valid amount: !gamble <number> or !gamble all\"",
+      "author": "HackerUser",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793876054001-i3cw",
+      "timestamp": "2026-11-05T10:54:14.001Z",
+      "type": "timer",
+      "message": "Timer [Subscribe & Like Reminder] triggered: \"🔔 Enjoying the stream? Don't forget to Like, Subscribe & hit the Bell icon for alerts!\"",
+      "author": "System",
+      "action": null,
+      "details": null
+    },
+    {
+      "id": "log-1793876855093-3zxi",
+      "timestamp": "2026-11-05T11:07:35.093Z",
+      "type": "system",
+      "message": "Bot Engine started. Searching for active live stream...",
+      "author": "System",
+      "action": null,
+      "details": null
+    },
+    {
+      "id": "log-1793876893272-9fe4",
+      "timestamp": "2026-11-05T11:08:13.272Z",
+      "type": "command",
+      "message": "@SpeedTester_0 triggered !discord -> \"🎮 Join Mohit M07's official Discord server: https://discord.gg/mkHSm7mrdT SpeedTester_0!\"",
+      "author": "SpeedTester_0",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793876893567-51cm",
+      "timestamp": "2026-11-05T11:08:13.567Z",
+      "type": "command",
+      "message": "@HackerUser triggered !gamble -> \"@HackerUser, please specify a valid amount: !gamble <number> or !gamble all\"",
+      "author": "HackerUser",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793876893577-hhws",
+      "timestamp": "2026-11-05T11:08:13.577Z",
+      "type": "command",
+      "message": "@HackerUser triggered !gamble -> \"@HackerUser, please specify a valid amount: !gamble <number> or !gamble all\"",
+      "author": "HackerUser",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793876893587-ryom",
+      "timestamp": "2026-11-05T11:08:13.587Z",
+      "type": "command",
+      "message": "@HackerUser triggered !gamble -> \"@HackerUser, please specify a valid amount: !gamble <number> or !gamble all\"",
+      "author": "HackerUser",
+      "action": "command_response",
+      "details": null
+    },
+    {
+      "id": "log-1793876915107-l3wu",
+      "timestamp": "2026-11-05T11:08:35.107Z",
+      "type": "timer",
+      "message": "Timer [Subscribe & Like Reminder] triggered: \"🔔 Enjoying the stream? Don't forget to Like, Subscribe & hit the Bell icon for alerts!\"",
+      "author": "System",
+      "action": null,
+      "details": null
+    },
+    {
+      "id": "log-1793878447321-j24b",
+      "timestamp": "2026-11-05T11:34:07.321Z",
+      "type": "system",
+      "message": "Bot Engine started. Searching for active live stream...",
+      "author": "System",
+      "action": null,
+      "details": null
     }
   ],
   "alertsConfig": {
@@ -3118,10 +3235,10 @@
     }
   },
   "stats": {
-    "totalMessagesProcessed": 197,
-    "totalCommandsExecuted": 7,
+    "totalMessagesProcessed": 303,
+    "totalCommandsExecuted": 9,
     "totalModerationActions": 0,
-    "totalTimersTriggered": 6,
+    "totalTimersTriggered": 8,
     "sessionStartTime": null
   },
   "quotaTracker": {

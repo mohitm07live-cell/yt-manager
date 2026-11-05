@@ -11,56 +11,56 @@
   "channel-SpeedTester_0": {
     "id": "channel-SpeedTester_0",
     "name": "SpeedTester_0",
-    "points": 250,
-    "messagesCount": 30,
+    "points": 350,
+    "messagesCount": 50,
     "triviaWins": 0,
     "gambleWins": 0,
-    "lastActive": 1793873548065
+    "lastActive": 1793876893539
   },
   "channel-SpeedTester_1": {
     "id": "channel-SpeedTester_1",
     "name": "SpeedTester_1",
-    "points": 250,
-    "messagesCount": 30,
+    "points": 350,
+    "messagesCount": 50,
     "triviaWins": 0,
     "gambleWins": 0,
-    "lastActive": 1793873548069
+    "lastActive": 1793876893544
   },
   "channel-SpeedTester_2": {
     "id": "channel-SpeedTester_2",
     "name": "SpeedTester_2",
-    "points": 250,
-    "messagesCount": 30,
+    "points": 350,
+    "messagesCount": 50,
     "triviaWins": 0,
     "gambleWins": 0,
-    "lastActive": 1793873548074
+    "lastActive": 1793876893550
   },
   "channel-SpeedTester_3": {
     "id": "channel-SpeedTester_3",
     "name": "SpeedTester_3",
-    "points": 250,
-    "messagesCount": 30,
+    "points": 350,
+    "messagesCount": 50,
     "triviaWins": 0,
     "gambleWins": 0,
-    "lastActive": 1793873548083
+    "lastActive": 1793876893555
   },
   "channel-SpeedTester_4": {
     "id": "channel-SpeedTester_4",
     "name": "SpeedTester_4",
-    "points": 250,
-    "messagesCount": 30,
+    "points": 350,
+    "messagesCount": 50,
     "triviaWins": 0,
     "gambleWins": 0,
-    "lastActive": 1793873548079
+    "lastActive": 1793876893560
   },
   "channel-HackerUser": {
     "id": "channel-HackerUser",
     "name": "HackerUser",
-    "points": 145,
-    "messagesCount": 9,
+    "points": 175,
+    "messagesCount": 15,
     "triviaWins": 0,
     "gambleWins": 0,
-    "lastActive": 1793873548109
+    "lastActive": 1793876893587
   },
   "channel-StreamViewer99": {
     "id": "channel-StreamViewer99",
