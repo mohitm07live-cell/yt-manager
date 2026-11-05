@@ -1176,6 +1176,9 @@ app.post('/api/shorts-sync/cookies', (req, res) => {
       return res.status(400).json({ error: 'Please paste valid Netscape cookies.txt content.' });
     }
     const result = shortsAutoSyncService.saveCookies(cookiesText);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error || 'Invalid cookie format.' });
+    }
     res.json({ success: true, message: 'Cookies saved successfully!', ...result });
   } catch (err) {
     res.status(500).json({ error: err.message });

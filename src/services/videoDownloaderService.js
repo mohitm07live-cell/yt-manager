@@ -289,6 +289,67 @@ class VideoDownloaderService {
   }
 
   /**
+   * Validate and sanitize Netscape HTTP cookie file content
+   */
+  sanitizeNetscapeCookies(raw) {
+    if (!raw || typeof raw !== 'string') return null;
+    const trimmed = raw.trim();
+    // Detect if someone just passed a filename like "cookies.txt"
+    if (/^[\w,\s-]+\.(txt|json|cookie)$/i.test(trimmed)) {
+      return null;
+    }
+
+    const lines = trimmed.split(/\r?\n/);
+    const sanitizedLines = ['# Netscape HTTP Cookie File', '# This is a generated file! Do not edit.', ''];
+    let validCookieCount = 0;
+
+    for (const line of lines) {
+      const l = line.trim();
+      if (!l) continue;
+      if (l.startsWith('#')) {
+        if (!l.includes('Netscape HTTP Cookie File') && !l.includes('Do not edit')) {
+          sanitizedLines.push(l);
+        }
+        continue;
+      }
+
+      // Split either by tabs or by multiple spaces if tabs were lost during copy/paste
+      let parts = l.split('\t');
+      if (parts.length < 7) {
+        const whitespaceParts = l.split(/\s+/);
+        if (whitespaceParts.length >= 7) {
+          const domain = whitespaceParts[0];
+          const sub = whitespaceParts[1].toUpperCase();
+          const path = whitespaceParts[2];
+          const secure = whitespaceParts[3].toUpperCase();
+          const expires = whitespaceParts[4];
+          const name = whitespaceParts[5];
+          const val = whitespaceParts.slice(6).join(' ');
+          parts = [domain, sub, path, secure, expires, name, val];
+        }
+      }
+
+      if (parts.length >= 7) {
+        const domain = parts[0].trim();
+        const sub = parts[1].trim().toUpperCase() === 'TRUE' ? 'TRUE' : 'FALSE';
+        const path = parts[2].trim() || '/';
+        const secure = parts[3].trim().toUpperCase() === 'TRUE' ? 'TRUE' : 'FALSE';
+        const expires = parts[4].trim();
+        const name = parts[5].trim();
+        const val = parts.slice(6).join('\t').trim();
+
+        if (domain && name && val) {
+          sanitizedLines.push(`${domain}\t${sub}\t${path}\t${secure}\t${expires}\t${name}\t${val}`);
+          validCookieCount++;
+        }
+      }
+    }
+
+    if (validCookieCount === 0) return null;
+    return sanitizedLines.join('\n') + '\n';
+  }
+
+  /**
    * Look for optional cookies file or generate YouTube client bypass arguments
    */
   getYtDlpBypassArgs(platform = 'youtube') {
@@ -303,17 +364,20 @@ class VideoDownloaderService {
 
     const autoCookiePath = path.join(process.cwd(), 'data', 'cookies.txt');
 
-    // Auto-create cookies.txt if provided via Render environment variable
+    // Auto-create cookies.txt if provided via Render environment variable (validate it is real cookie text, not just a filename)
     const envCookies = process.env.YOUTUBE_COOKIES || process.env.COOKIES_CONTENT;
     if (envCookies) {
-      try {
-        if (!fs.existsSync(path.dirname(autoCookiePath))) {
-          fs.mkdirSync(path.dirname(autoCookiePath), { recursive: true });
-        }
-        if (!fs.existsSync(autoCookiePath) || fs.readFileSync(autoCookiePath, 'utf8') !== envCookies) {
-          fs.writeFileSync(autoCookiePath, envCookies, 'utf8');
-        }
-      } catch (e) {}
+      const sanitizedEnv = this.sanitizeNetscapeCookies(envCookies);
+      if (sanitizedEnv) {
+        try {
+          if (!fs.existsSync(path.dirname(autoCookiePath))) {
+            fs.mkdirSync(path.dirname(autoCookiePath), { recursive: true });
+          }
+          if (!fs.existsSync(autoCookiePath) || fs.readFileSync(autoCookiePath, 'utf8') !== sanitizedEnv) {
+            fs.writeFileSync(autoCookiePath, sanitizedEnv, 'utf8');
+          }
+        } catch (e) {}
+      }
     }
 
     const candidateFiles = [
@@ -328,8 +392,16 @@ class VideoDownloaderService {
       if (fs.existsSync(f)) {
         try {
           if (fs.statSync(f).size > 10) {
-            args.push('--cookies', f);
-            break;
+            const rawContent = fs.readFileSync(f, 'utf8');
+            const sanitized = this.sanitizeNetscapeCookies(rawContent);
+            if (sanitized) {
+              // Ensure file on disk is in clean tab-separated format
+              if (rawContent !== sanitized) {
+                try { fs.writeFileSync(f, sanitized, 'utf8'); } catch (e) {}
+              }
+              args.push('--cookies', f);
+              break;
+            }
           }
         } catch (e) {}
       }

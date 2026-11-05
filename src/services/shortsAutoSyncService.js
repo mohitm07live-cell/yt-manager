@@ -400,13 +400,19 @@ class ShortsAutoSyncService {
   }
 
   saveCookies(cookiesText) {
-    const trimmed = cookiesText.trim();
+    const sanitized = videoDownloaderService.sanitizeNetscapeCookies(cookiesText);
+    if (!sanitized) {
+      return {
+        success: false,
+        error: 'Invalid cookie format! File ka naam ("cookies.txt") nahi, balki cookies.txt file ko Notepad me open karke uska pura content copy-paste karein (jo "# Netscape HTTP Cookie File" se shuru hota hai).'
+      };
+    }
     const cookiePath = path.join(process.cwd(), 'data', 'cookies.txt');
-    fs.writeFileSync(cookiePath, trimmed, 'utf8');
+    fs.writeFileSync(cookiePath, sanitized, 'utf8');
     try {
-      fs.writeFileSync(path.join(process.cwd(), 'cookies.txt'), trimmed, 'utf8');
+      fs.writeFileSync(path.join(process.cwd(), 'cookies.txt'), sanitized, 'utf8');
     } catch (e) {}
-    return { success: true, size: trimmed.length };
+    return { success: true, size: sanitized.length };
   }
 
   getCookiesStatus() {
