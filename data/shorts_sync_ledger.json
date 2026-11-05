@@ -10,6 +10,22 @@
   },
   "history": [
     {
+      "id": "sync-1793888798166",
+      "channelId": "channel_2",
+      "channelName": "Channel 2 (Evening)",
+      "destinationChannelTitle": "Connected Channel",
+      "sourceVideoId": "SlwY6T75CQc",
+      "sourceTitle": "Neon Red Criminal Bundle Ko Free Mai Kaise Nikale 🤑💎 | Neon Red Criminal Bundle Free 🥳 #freefire",
+      "sourceViews": 58000,
+      "sourceUrl": "https://www.youtube.com/shorts/SlwY6T75CQc",
+      "uploadedVideoId": "KI_t1-OJLRE",
+      "uploadedUrl": "https://www.youtube.com/shorts/KI_t1-OJLRE",
+      "uploadedTitle": "Neon Red Criminal Bundle Ko Free Mai Kaise Nikale 🤑💎 | Neon Red Criminal Bundle Free 🥳 #freefire",
+      "privacyStatus": "public",
+      "syncedAt": "2026-11-05T14:26:38.166Z",
+      "status": "success"
+    },
+    {
       "id": "sync-1793887167573",
       "channelId": "channel_1",
       "channelName": "Channel 1 (Morning)",
@@ -122,16 +138,34 @@
       "id": "channel_2",
       "name": "Channel 2 (Evening)",
       "settings": {
-        "targetChannelUrl": "https://www.youtube.com/@Ashugamingyt90",
+        "targetChannelUrl": "https://www.youtube.com/@AnotherCreator",
         "autoSyncEnabled": true,
         "syncHour": 18,
         "privacyStatus": "public",
         "categoryId": "20",
         "appendShortsTag": true,
-        "lastSyncDate": null
+        "lastSyncDate": "2026-11-05"
       },
-      "destinationAccount": null
+      "destinationAccount": {
+        "tokens": {
+          "access_token": "ya29.a0AehfTOkXM-ympO_Lo1LQX0r2g3lsTRLKdrS_t4yoS97cwtnzgVrOKSqu47DeyVSuKMcWq8Xh2f6kO9XeRuD9lfPUInsXAA9CPa6VV19OeOEHAvejBST0lKX5p3luG24ISRBk6M7vpfF_U0lx0ox-yiQn7aHNzok5MJ2AAvJ29RjH6yoG343XcyAMHlfPBDNHN1lk_BgaCgYKASMSAQwSFQHGX2MicpF2g7-xYs4C5x-8SCubHA0206",
+          "refresh_token": "1//0gwrWUiT43elaCgYIARAAGBASNwF-L9IryPVnLvKQiWiv04g1UJmkYjAC-6-Han9gIQf5xR4dDWf0o7KtCCZhwoDg4XHHqxuY-ZY",
+          "scope": "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email openid https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.force-ssl",
+          "token_type": "Bearer",
+          "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Ijk0M2EzYTVkN2Q5MTk2MjVhNDU0ZTQ4OWI3NWMyOWFkYWI1N2FjYmEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI2NzA1NzY5NDIxMTMtMzVubDJkamRvdXMwYm45cWlqNHBsdmt0dXI0MW1zOTkuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiI2NzA1NzY5NDIxMTMtMzVubDJkamRvdXMwYm45cWlqNHBsdmt0dXI0MW1zOTkuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTUzNTI1MjQ5MTk1MzYyNDg2MjAiLCJlbWFpbCI6Im1vaGl0bTA3bGl2ZUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiYXRfaGFzaCI6IngycVFhSzJNT1NTUU1MNWNTQmpSN0EiLCJuYW1lIjoiTW9oaXQgU2luZGh1IiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0pJSUJLLWxzNUJIN2ZNSXdMdnVtblhsQ1pzVTUxNm5tbzZncENJUHNkeTdGZlgxdUk9czk2LWMiLCJnaXZlbl9uYW1lIjoiTW9oaXQiLCJmYW1pbHlfbmFtZSI6IlNpbmRodSIsImlhdCI6MTc5Mzg4ODY2NSwiZXhwIjoxNzkzODkyMjY1fQ.DgSpGpnd6IrzTJV7z7brcIkp6BVdLJ6TVL4sWwRiuRaWccw9iosDTZQWS0XssjazIc_4p1jCohBUMZJa-Un1mlbtGxq9wSZdG8nOPaA--6VcsfdgCyUnw8_tkzC_6AQLyy7le7XlURDttS8jiqeZlXic63QSZiLrcC2IInlde28KeiFdgM12a1HQbvmQYfPWCqI0VBYFN36IdCJngkI3aEw22moPCLvomWWn9IrXOWCQQbaVESPAq7l7hz38O8N1DY5H08q_LNbjYxdbU-lThyfGk66854BzJWK04YNSiSR7gf6HHTHV_aIe6lL1PpH5zt3E8pKZzosKXokIriAgaQ",
+          "refresh_token_expires_in": 604799,
+          "expiry_date": 1793892261833
+        },
+        "channelInfo": null,
+        "userProfile": {
+          "id": "115352524919536248620",
+          "name": "Mohit Sindhu",
+          "email": "mohitm07live@gmail.com",
+          "picture": "https://lh3.googleusercontent.com/a/ACg8ocJIIBK-ls5BH7fMIwLvumnXlCZsU516nmo6gpCIPsdy7FfX1uI=s96-c"
+        },
+        "connectedAt": "2026-11-05T14:24:23.259Z"
+      }
     }
   },
-  "activeChannel": "channel_1"
+  "activeChannel": "channel_2"
 }

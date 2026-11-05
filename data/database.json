@@ -3364,6 +3364,51 @@
       "author": "System",
       "action": null,
       "details": null
+    },
+    {
+      "id": "log-1793888526255-guoo",
+      "timestamp": "2026-11-05T14:22:06.255Z",
+      "type": "system",
+      "message": "[ShortsSync] Destination channel connected for Channel 2 (Evening): Custom Account",
+      "author": "System",
+      "action": null,
+      "details": null
+    },
+    {
+      "id": "log-1793888576407-pvm9",
+      "timestamp": "2026-11-05T14:22:56.407Z",
+      "type": "system",
+      "message": "[ShortsSync] Destination channel connected for Channel 2 (Evening): Custom Account",
+      "author": "System",
+      "action": null,
+      "details": null
+    },
+    {
+      "id": "log-1793888663259-j494",
+      "timestamp": "2026-11-05T14:24:23.259Z",
+      "type": "system",
+      "message": "[ShortsSync] Destination channel connected for Channel 2 (Evening): Custom Account",
+      "author": "System",
+      "action": null,
+      "details": null
+    },
+    {
+      "id": "log-1793888798166-bxau",
+      "timestamp": "2026-11-05T14:26:38.166Z",
+      "type": "system",
+      "message": "[Auto Shorts] [Channel 2 (Evening)] Cloned & Uploaded: \"Neon Red Criminal Bundle Ko Free Mai Kaise Nikale 🤑💎 | Neon Red Criminal Bundle Free 🥳 #freefire\" -> https://www.youtube.com/shorts/KI_t1-OJLRE",
+      "author": "System",
+      "action": null,
+      "details": null
+    },
+    {
+      "id": "log-1793888857748-pw84",
+      "timestamp": "2026-11-05T14:27:37.748Z",
+      "type": "system",
+      "message": "Bot Engine started. Searching for active live stream...",
+      "author": "System",
+      "action": null,
+      "details": null
     }
   ],
   "alertsConfig": {
