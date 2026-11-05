@@ -13,12 +13,68 @@ class VideoDownloaderService {
         fs.mkdirSync(this.downloadsDir, { recursive: true });
       } catch (e) {}
     }
+
+    // Auto-bootstrap environment dependencies on Linux/Render
+    if (process.platform !== 'win32') {
+      setTimeout(() => this.bootstrapLinuxEnvironment(), 100);
+    }
+  }
+
+  bootstrapLinuxEnvironment() {
+    if (process.platform === 'win32') return;
+
+    try {
+      const existing = this.resolveYtDlpBinary(true);
+      if (existing) {
+        return;
+      }
+    } catch (e) {}
+
+    console.log('[VideoDownloader] Auto-installing yt-dlp for Linux / Render...');
+    const binDir = path.join(process.cwd(), 'bin');
+    const targetBin = path.join(binDir, 'yt-dlp');
+
+    if (!fs.existsSync(binDir)) {
+      try { fs.mkdirSync(binDir, { recursive: true }); } catch (e) {}
+    }
+
+    // 1. Run setup_render_env script via Node
+    try {
+      const setupScript = path.join(__dirname, '..', '..', 'scripts', 'setup_render_env.js');
+      if (fs.existsSync(setupScript)) {
+        execSync(`node "${setupScript}"`, { stdio: 'inherit', timeout: 65000 });
+        if (fs.existsSync(targetBin)) {
+          fs.chmodSync(targetBin, 0o755);
+          console.log('[VideoDownloader] Verified standalone yt-dlp binary at', targetBin);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('[VideoDownloader] Note: setup_render_env run error:', e.message);
+    }
+
+    // 2. Try curl standalone executable as fallback
+    try {
+      execSync(`curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o "${targetBin}" && chmod a+rx "${targetBin}"`, { stdio: 'ignore', timeout: 45000 });
+      if (fs.existsSync(targetBin)) {
+        fs.chmodSync(targetBin, 0o755);
+        console.log('[VideoDownloader] Downloaded standalone yt-dlp binary via curl to', targetBin);
+        return;
+      }
+    } catch (e) {}
+
+    // 3. Try pip3 install
+    try {
+      execSync('python3 -m pip install --no-cache-dir --break-system-packages yt-dlp || pip3 install --no-cache-dir yt-dlp || pip install --no-cache-dir yt-dlp', { stdio: 'ignore', timeout: 35000 });
+      console.log('[VideoDownloader] yt-dlp installed via pip.');
+      return;
+    } catch (e) {}
   }
 
   /**
    * Resolve best working yt-dlp binary (WinGet standalone executable, workspace bin, or system PATH)
    */
-  resolveYtDlpBinary() {
+  resolveYtDlpBinary(fastCheckOnly = false) {
     // 1. Explicit env variable
     if (process.env.YTDLP_PATH && fs.existsSync(process.env.YTDLP_PATH)) {
       return { cmd: process.env.YTDLP_PATH, isPythonModule: false };
@@ -66,8 +122,31 @@ class VideoDownloaderService {
       } catch (e) {}
     }
 
-    // 3. Fallback to python -m yt_dlp if standalone binary is not found
+    // Verify if python -m yt_dlp actually works
     const py = this.resolvePythonPath();
+    try {
+      execSync(`${py} -m yt_dlp --version`, { stdio: ['pipe', 'pipe', 'ignore'], timeout: 4000 });
+      return { cmd: py, isPythonModule: true };
+    } catch (e) {}
+
+    // If fast check only, exit without attempting installation
+    if (fastCheckOnly) return null;
+
+    // If not found and on Linux, run bootstrap installation synchronously
+    if (process.platform !== 'win32') {
+      this.bootstrapLinuxEnvironment();
+      const localBin = path.join(process.cwd(), 'bin', 'yt-dlp');
+      if (fs.existsSync(localBin)) {
+        return { cmd: localBin, isPythonModule: false };
+      }
+      try {
+        execSync(`${py} -m yt_dlp --version`, { stdio: ['pipe', 'pipe', 'ignore'], timeout: 4000 });
+        return { cmd: py, isPythonModule: true };
+      } catch (e) {}
+
+      throw new Error('yt-dlp binary is missing on this server. Please ensure scripts/setup_render_env.js ran during build.');
+    }
+
     return { cmd: py, isPythonModule: true };
   }
 
@@ -96,6 +175,13 @@ class VideoDownloaderService {
    * Dynamically locate working FFmpeg directory or binary
    */
   getFFmpegLocation() {
+    try {
+      const ffmpegStatic = require('ffmpeg-static');
+      if (ffmpegStatic && fs.existsSync(ffmpegStatic)) {
+        return path.dirname(ffmpegStatic);
+      }
+    } catch (e) {}
+
     if (process.platform !== 'win32') {
       return 'ffmpeg';
     }
@@ -156,9 +242,15 @@ class VideoDownloaderService {
   }
 
   getFFmpegExe() {
-    if (process.env.FFMPEG_PATH) {
+    if (process.env.FFMPEG_PATH && fs.existsSync(process.env.FFMPEG_PATH)) {
       return process.env.FFMPEG_PATH;
     }
+    try {
+      const ffmpegStatic = require('ffmpeg-static');
+      if (ffmpegStatic && fs.existsSync(ffmpegStatic)) {
+        return ffmpegStatic;
+      }
+    } catch (e) {}
     if (process.platform !== 'win32') {
       return 'ffmpeg';
     }
@@ -386,10 +478,13 @@ class VideoDownloaderService {
       '--no-playlist',
       '--progress',
       '--windows-filenames',
-      '--ffmpeg-location', ffmpegLocation,
       '-f', formatSelection,
       '-o', outputTemplate
     );
+
+    if (ffmpegLocation && ffmpegLocation !== 'ffmpeg') {
+      args.push('--ffmpeg-location', ffmpegLocation);
+    }
 
     // Platform specific headers
     if (platform === 'instagram') {
@@ -768,9 +863,11 @@ class VideoDownloaderService {
   }
 
   openDownloadsFolder() {
-    const explorerCmd = `explorer "${this.downloadsDir}"`;
-    exec(explorerCmd);
-    return true;
+    if (process.platform === 'win32') {
+      exec(`explorer "${this.downloadsDir}"`);
+      return true;
+    }
+    return false;
   }
 
   formatBytes(bytes) {

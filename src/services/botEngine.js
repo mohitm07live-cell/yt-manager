@@ -311,10 +311,19 @@ class BotEngine extends EventEmitter {
 
       console.error('Error in bot pollLoop:', err.message);
       
-      // If live chat is offline or error occurred
-      if (err.code === 404) {
+      // If live chat ended or broadcast went offline
+      if (err.code === 404 || err.message?.includes('liveChatEnded') || err.message?.includes('chatEnded')) {
+        console.log('[BotEngine] Live stream chat ended or stream offline. Returning to standby mode.');
         this.currentBroadcast = null;
         this.nextPageToken = null;
+        this.broadcast('streamStatus', {
+          live: false,
+          message: 'Stream ended. Waiting for next live broadcast.'
+        });
+        if (this.isRunning) {
+          this.pollTimeout = setTimeout(() => this.pollLoop(), 60000);
+        }
+        return;
       }
 
       // Retry after backoff

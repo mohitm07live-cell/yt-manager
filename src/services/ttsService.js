@@ -30,9 +30,15 @@ function setMemoryCache(key, value) {
  * Locate workspace FFmpeg binary
  */
 function getFFmpegExe() {
-  if (process.env.FFMPEG_PATH) {
+  if (process.env.FFMPEG_PATH && fs.existsSync(process.env.FFMPEG_PATH)) {
     return process.env.FFMPEG_PATH;
   }
+  try {
+    const ffmpegStatic = require('ffmpeg-static');
+    if (ffmpegStatic && fs.existsSync(ffmpegStatic)) {
+      return ffmpegStatic;
+    }
+  } catch (e) {}
   if (process.platform === 'win32') {
     const localBin = path.join(process.cwd(), 'bin', 'ffmpeg.exe');
     if (fs.existsSync(localBin)) {

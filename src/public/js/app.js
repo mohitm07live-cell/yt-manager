@@ -4147,6 +4147,8 @@ function initVideoDownloader() {
       const data = await res.json();
       if (data.success) {
         showToast('Downloads folder opened in Windows Explorer!');
+      } else {
+        showToast(data.message || 'Folder cannot be opened on cloud server', true);
       }
     } catch (err) {
       showToast('Could not open downloads folder: ' + err.message, true);

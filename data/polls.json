@@ -1,0 +1,78 @@
+[
+  {
+    "id": "poll_1793873172678",
+    "question": "Favorite Game to Stream?",
+    "options": [
+      {
+        "id": 1,
+        "text": "Valorant",
+        "votes": 1,
+        "percentage": 100
+      },
+      {
+        "id": 2,
+        "text": "GTA 5",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "id": 3,
+        "text": "Minecraft",
+        "votes": 0,
+        "percentage": 0
+      }
+    ],
+    "totalVotes": 1,
+    "voters": {
+      "voter1": {
+        "optionId": 1,
+        "name": "MohitFan",
+        "timestamp": 1793873172679
+      }
+    },
+    "durationSeconds": 120,
+    "startedAt": 1793873172678,
+    "endsAt": 1793873292678,
+    "isActive": false,
+    "endedAt": 1793873292679,
+    "winner": "Valorant"
+  },
+  {
+    "id": "poll_1793872173711",
+    "question": "Favorite Game to Stream?",
+    "options": [
+      {
+        "id": 1,
+        "text": "Valorant",
+        "votes": 1,
+        "percentage": 100
+      },
+      {
+        "id": 2,
+        "text": "GTA 5",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "id": 3,
+        "text": "Minecraft",
+        "votes": 0,
+        "percentage": 0
+      }
+    ],
+    "totalVotes": 1,
+    "voters": {
+      "voter1": {
+        "optionId": 1,
+        "name": "MohitFan",
+        "timestamp": 1793872173713
+      }
+    },
+    "durationSeconds": 120,
+    "startedAt": 1793872173711,
+    "endsAt": 1793872293711,
+    "isActive": false,
+    "endedAt": 1793872293711,
+    "winner": "Valorant"
+  }
+]

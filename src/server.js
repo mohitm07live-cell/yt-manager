@@ -1101,7 +1101,13 @@ app.delete('/api/downloader/file/:filename', (req, res) => {
 
 app.post('/api/downloader/open-folder', (req, res) => {
   try {
-    videoDownloaderService.openDownloadsFolder();
+    const opened = videoDownloaderService.openDownloadsFolder();
+    if (!opened) {
+      return res.json({
+        success: false,
+        message: 'Server is running in cloud/Render environment. Download media directly via the Download button in the library below.'
+      });
+    }
     res.json({ success: true, path: videoDownloaderService.downloadsDir });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1349,6 +1355,12 @@ app.put('/api/multistream/settings', (req, res) => {
 
 app.post('/api/multistream/launch-desktop', (req, res) => {
   try {
+    if (process.platform !== 'win32') {
+      return res.json({
+        success: false,
+        message: 'Desktop Overlay is a Windows desktop application. Run the bot locally on Windows to use the transparent HUD.'
+      });
+    }
     const { exec } = require('child_process');
     const exePath = path.join(__dirname, '..', 'scripts', 'DesktopOverlay.exe');
     exec(`start "" "${exePath}"`, (err) => {

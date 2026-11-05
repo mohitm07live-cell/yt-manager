@@ -2,7 +2,7 @@
   "subscriberGoal": {
     "enabled": true,
     "title": "Subscriber Goal",
-    "current": 2270,
+    "current": 4020,
     "target": 2500,
     "unit": "Subs",
     "theme": "emerald",
@@ -11,7 +11,7 @@
   "likeGoal": {
     "enabled": false,
     "title": "Stream Likes",
-    "current": 0,
+    "current": 5,
     "target": 100,
     "unit": "Likes",
     "theme": "cyan",

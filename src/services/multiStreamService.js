@@ -11,6 +11,7 @@ class MultiStreamService extends EventEmitter {
     this.streamState = new Map(); // streamId -> { liveChatId, nextPageToken, isPolling, pollTimer, status, channelName, videoId }
     this.processedMsgIds = new Set();
     this.pollingIntervalMs = 4000;
+    this.quotaExceededUntil = 0;
   }
 
   setSocketIO(io) {
@@ -143,6 +144,10 @@ class MultiStreamService extends EventEmitter {
   }
 
   async pollStreamChat(streamId) {
+    if (Date.now() < this.quotaExceededUntil) {
+      return;
+    }
+
     const state = this.streamState.get(streamId);
     if (!state) return;
 
@@ -166,16 +171,27 @@ class MultiStreamService extends EventEmitter {
 
           if (vRes.data.items && vRes.data.items.length > 0) {
             const item = vRes.data.items[0];
-            state.channelName = streamConfig.name !== 'YouTube Live Stream' ? streamConfig.name : item.snippet.channelTitle;
+            const liveContent = item.snippet?.liveBroadcastContent;
             const liveChatId = item.liveStreamingDetails?.activeLiveChatId;
-            if (liveChatId) {
+            const actualEndTime = item.liveStreamingDetails?.actualEndTime;
+
+            // Strict Real-Stream Detection: Must be actively live with chat and NO actualEndTime
+            if ((liveContent === 'live' || liveChatId) && !actualEndTime) {
               state.liveChatId = liveChatId;
               state.status = 'live';
+              state.channelName = streamConfig.name !== 'YouTube Live Stream' ? streamConfig.name : item.snippet.channelTitle;
             } else {
-              state.status = 'offline';
+              // Dummy, ended, or recorded video -> completely stop polling
+              state.status = actualEndTime ? 'ended' : 'offline';
+              console.log(`[MultiStreamService] Stream ${streamId} (${state.videoId}) is NOT live (${state.status}). Stopping polling.`);
+              this.stopStreamPolling(streamId);
+              return;
             }
           } else {
             state.status = 'video_not_found';
+            console.log(`[MultiStreamService] Stream ${streamId} video not found on YouTube. Stopping polling.`);
+            this.stopStreamPolling(streamId);
+            return;
           }
         }
 
@@ -260,18 +276,46 @@ class MultiStreamService extends EventEmitter {
         }
       }
     } catch (err) {
+      const isQuota = err.message?.toLowerCase().includes('quota') || err.code === 403;
+      if (isQuota) {
+        console.warn(`[MultiStreamService] YouTube API Quota Exceeded! Pausing multi-stream polling for 30 minutes to preserve quota.`);
+        this.quotaExceededUntil = Date.now() + 30 * 60 * 1000;
+        this.stopAllStreams();
+        setTimeout(() => {
+          this.quotaExceededUntil = 0;
+          this.startAllStreams();
+        }, 30 * 60 * 1000);
+        return;
+      }
+
+      if (err.message?.includes('liveChatEnded') || err.message?.includes('chatEnded') || err.code === 404) {
+        console.log(`[MultiStreamService] Stream ${streamId} live chat ended. Stopping polling.`);
+        state.status = 'ended';
+        this.stopStreamPolling(streamId);
+        return;
+      }
+
       console.error(`[MultiStreamService] Error polling stream ${streamId}:`, err.message);
       state.errorCount = (state.errorCount || 0) + 1;
-      state.status = err.message?.includes('liveChatEnded') ? 'ended' : 'error';
-      if (state.errorCount > 10) {
-        state.liveChatId = null; // reset live chat ID to re-query next time
+      state.status = 'error';
+      if (state.errorCount > 5) {
+        console.log(`[MultiStreamService] Stream ${streamId} encountered repeated errors. Halting.`);
+        this.stopStreamPolling(streamId);
+        return;
       }
     }
 
-    // Schedule next poll interval (4s default or fallback)
+    // Smart backoff to protect quota
+    let nextDelay = this.pollingIntervalMs;
+    if (state.status === 'offline' || state.status === 'video_not_found' || state.status === 'ended') {
+      nextDelay = 60000; // Check once a minute for non-live streams
+    } else if (state.errorCount > 3) {
+      nextDelay = 30000; // 30s backoff on errors
+    }
+
     state.pollTimer = setTimeout(() => {
       this.pollStreamChat(streamId);
-    }, this.pollingIntervalMs);
+    }, nextDelay);
 
     this.broadcastStreamStatuses();
   }
