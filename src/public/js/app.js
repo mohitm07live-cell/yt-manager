@@ -1,5 +1,6 @@
 // Socket.io instance
 const socket = io();
+window.socket = socket;
 
 // State
 let appState = {
@@ -5205,6 +5206,16 @@ function initShortsSyncModule() {
   const progressBox = document.getElementById('shortsSyncProgressBox');
   const progressTitle = document.getElementById('shortsSyncProgressTitle');
   const progressMsg = document.getElementById('shortsSyncProgressMsg');
+  const progressPct = document.getElementById('shortsSyncProgressPct');
+  const progressBar = document.getElementById('shortsSyncProgressBar');
+  const progressSpinner = document.getElementById('shortsSyncSpinner');
+  const candidateCard = document.getElementById('shortsSyncCandidateCard');
+  const candidateThumb = document.getElementById('shortsSyncCandidateThumb');
+  const candidateTitle = document.getElementById('shortsSyncCandidateTitle');
+  const candidateMeta = document.getElementById('shortsSyncCandidateMeta');
+  const logConsole = document.getElementById('shortsSyncLogConsole');
+  const logCount = document.getElementById('shortsSyncLogCount');
+  let syncPollTimer = null;
   const queueBox = document.getElementById('shortsScannedQueueBox');
   const queueBody = document.getElementById('shortsScannedTableBody');
   const scanCountBadge = document.getElementById('shortsScanCountBadge');
@@ -5457,6 +5468,126 @@ function initShortsSyncModule() {
     }
   });
 
+  function renderSyncLogs(logs) {
+    if (!logConsole || !logs || logs.length === 0) return;
+    if (logCount) logCount.textContent = `${logs.length} events`;
+    
+    const stageIcons = {
+      scanning: '<i class="fa-solid fa-magnifying-glass" style="color: #60a5fa;"></i>',
+      downloading: '<i class="fa-solid fa-download" style="color: #f59e0b;"></i>',
+      processing: '<i class="fa-solid fa-gear fa-spin" style="color: #a855f7;"></i>',
+      uploading: '<i class="fa-solid fa-cloud-arrow-up" style="color: #38bdf8;"></i>',
+      completed: '<i class="fa-solid fa-check text-success"></i>',
+      error: '<i class="fa-solid fa-triangle-exclamation text-red"></i>',
+      info: '<i class="fa-solid fa-circle-info text-blue"></i>'
+    };
+
+    logConsole.innerHTML = logs.map(l => {
+      const icon = stageIcons[l.stage] || stageIcons.info;
+      const stageColor = l.stage === 'error' ? '#ef4444' : l.stage === 'completed' ? '#10b981' : l.stage === 'uploading' ? '#38bdf8' : '#cbd5e1';
+      return `<div style="margin-bottom: 4px; word-break: break-all;">
+        <span style="color: #64748b; font-size: 11px;">[${l.time}]</span> 
+        <span style="margin: 0 4px;">${icon}</span>
+        <span style="color: ${stageColor}; font-weight: 500;">${escapeHtml(l.text)}</span>
+      </div>`;
+    }).join('');
+
+    logConsole.scrollTop = logConsole.scrollHeight;
+  }
+
+  function updateSyncUI(data) {
+    if (!progressBox) return;
+    progressBox.style.display = 'block';
+
+    const stageNames = {
+      scanning: '🔍 Scanning Target Channel...',
+      downloading: '📥 Downloading in Highest Quality...',
+      processing: '⚡ Merging Lossless Streams with FFmpeg...',
+      uploading: '🚀 Uploading to YouTube Data API...',
+      completed: '🎉 Upload Complete & Live!',
+      error: '❌ Sync Failed'
+    };
+
+    if (progressTitle) {
+      progressTitle.textContent = stageNames[data.stage] || 'Processing Shorts Sync...';
+    }
+    if (progressMsg) {
+      progressMsg.textContent = data.message || '';
+    }
+
+    // Update Percentage & Progress Bar
+    const pct = Math.max(0, Math.min(100, data.progress !== undefined ? data.progress : 0));
+    if (progressPct) progressPct.textContent = `${pct}%`;
+    if (progressBar) {
+      progressBar.style.width = `${pct}%`;
+      if (data.stage === 'completed') {
+        progressBar.style.background = '#10b981';
+      } else if (data.stage === 'error') {
+        progressBar.style.background = '#ef4444';
+      } else {
+        progressBar.style.background = 'linear-gradient(90deg, #ef4444, #f59e0b, #10b981)';
+      }
+    }
+
+    // Update Candidate Card
+    if (data.candidate && candidateCard) {
+      candidateCard.style.display = 'flex';
+      if (candidateThumb && data.candidate.thumbnail) candidateThumb.src = data.candidate.thumbnail;
+      if (candidateTitle) candidateTitle.textContent = data.candidate.title || 'Untitled Short';
+      if (candidateMeta) {
+        candidateMeta.textContent = `Views: ${Number(data.candidate.views || 0).toLocaleString()} • ID: ${data.candidate.id || ''}`;
+      }
+    }
+
+    // Render Logs
+    if (data.logs) {
+      renderSyncLogs(data.logs);
+    }
+
+    // State Transitions
+    if (data.stage === 'completed') {
+      stopSyncPolling();
+      progressBox.style.border = '1px solid rgba(16, 185, 129, 0.7)';
+      if (progressSpinner) progressSpinner.style.display = 'none';
+      btnRunSync.disabled = false;
+      btnRunSync.innerHTML = `<i class="fa-solid fa-bolt"></i> Upload #1 Top Short Now`;
+      loadHistory();
+    } else if (data.stage === 'error') {
+      stopSyncPolling();
+      progressBox.style.border = '1px solid rgba(239, 68, 68, 0.7)';
+      if (progressSpinner) progressSpinner.style.display = 'none';
+      btnRunSync.disabled = false;
+      btnRunSync.innerHTML = `<i class="fa-solid fa-bolt"></i> Upload #1 Top Short Now`;
+    } else {
+      if (progressSpinner) progressSpinner.style.display = 'block';
+    }
+  }
+
+  function startSyncPolling() {
+    if (syncPollTimer) clearInterval(syncPollTimer);
+    syncPollTimer = setInterval(async () => {
+      try {
+        const res = await fetch('/api/shorts-sync/status');
+        const data = await res.json();
+        if (data.success) {
+          updateSyncUI(data);
+          if (!data.isSyncing && (data.stage === 'completed' || data.stage === 'error' || data.stage === 'idle')) {
+            stopSyncPolling();
+          }
+        }
+      } catch (e) {
+        console.warn('Status poll error:', e.message);
+      }
+    }, 1200);
+  }
+
+  function stopSyncPolling() {
+    if (syncPollTimer) {
+      clearInterval(syncPollTimer);
+      syncPollTimer = null;
+    }
+  }
+
   btnRunSync.addEventListener('click', async () => {
     const url = targetUrlInput ? targetUrlInput.value.trim() : '';
     if (!url) {
@@ -5472,9 +5603,21 @@ function initShortsSyncModule() {
     btnRunSync.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Syncing...`;
     if (progressBox) {
       progressBox.style.display = 'block';
+      progressBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
       if (progressTitle) progressTitle.textContent = 'Starting Shorts Sync Pipeline...';
       if (progressMsg) progressMsg.textContent = 'Discovering top short and preparing highest quality download...';
+      if (progressPct) progressPct.textContent = '0%';
+      if (progressBar) {
+        progressBar.style.width = '5%';
+        progressBar.style.background = 'linear-gradient(90deg, #ef4444, #f59e0b, #10b981)';
+      }
+      if (progressSpinner) progressSpinner.style.display = 'block';
+      if (logConsole) {
+        logConsole.innerHTML = `<div style="color: #94a3b8;"><i class="fa-solid fa-spinner fa-spin" style="margin-right: 6px;"></i> Initializing sync pipeline for ${escapeHtml(url)}...</div>`;
+      }
     }
+
+    startSyncPolling();
 
     try {
       await saveSettings();
@@ -5487,8 +5630,9 @@ function initShortsSyncModule() {
       if (!data.success) {
         throw new Error(data.error || 'Failed to start sync');
       }
-      showToast('Sync pipeline started in background! Watch real-time progress below.');
+      showToast('Sync pipeline started! Watch live progress & terminal logs below.');
     } catch (e) {
+      stopSyncPolling();
       showToast(`Sync error: ${e.message}`, true);
       btnRunSync.disabled = false;
       btnRunSync.innerHTML = `<i class="fa-solid fa-bolt"></i> Upload #1 Top Short Now`;
@@ -5559,46 +5703,31 @@ function initShortsSyncModule() {
   }
 
   // Socket.IO Real-time Events
-  if (window.socket) {
+  if (typeof socket !== 'undefined' && socket) {
     socket.on('shortsDestinationAccountUpdated', destAcc => {
       renderDestinationCard(destAcc);
     });
+
     socket.on('shortsSyncProgress', data => {
-      if (!progressBox) return;
-      progressBox.style.display = 'block';
-      if (progressTitle) {
-        const stageNames = {
-          scanning: '🔍 Scanning Target Channel...',
-          downloading: '📥 Downloading in Highest Quality...',
-          uploading: '🚀 Uploading to YouTube...',
-          completed: '🎉 Upload Complete!',
-          error: '❌ Sync Failed'
-        };
-        progressTitle.textContent = stageNames[data.stage] || 'Processing Sync...';
-      }
-      if (progressMsg) {
-        progressMsg.textContent = data.message || '';
-      }
-      if (data.stage === 'error') {
-        progressBox.style.border = '1px solid rgba(239, 68, 68, 0.7)';
-        btnRunSync.disabled = false;
-        btnRunSync.innerHTML = `<i class="fa-solid fa-bolt"></i> Upload #1 Top Short Now`;
-      } else if (data.stage === 'completed') {
-        progressBox.style.border = '1px solid rgba(16, 185, 129, 0.7)';
-        btnRunSync.disabled = false;
-        btnRunSync.innerHTML = `<i class="fa-solid fa-bolt"></i> Upload #1 Top Short Now`;
-      }
+      updateSyncUI(data);
     });
 
     socket.on('shortsSyncSuccess', entry => {
       showToast(`🎉 Short uploaded successfully! Live at ${entry.uploadedUrl}`);
+      stopSyncPolling();
       btnRunSync.disabled = false;
       btnRunSync.innerHTML = `<i class="fa-solid fa-bolt"></i> Upload #1 Top Short Now`;
       if (progressBox) {
         progressBox.style.display = 'block';
         progressBox.style.border = '1px solid rgba(16, 185, 129, 0.7)';
-        if (progressTitle) progressTitle.textContent = '🎉 Upload Complete!';
+        if (progressSpinner) progressSpinner.style.display = 'none';
+        if (progressTitle) progressTitle.textContent = '🎉 Upload Complete & Live!';
         if (progressMsg) progressMsg.innerHTML = `Short successfully uploaded to YouTube: <a href="${entry.uploadedUrl}" target="_blank" style="color: #60a5fa; font-weight: bold; text-decoration: underline;">${entry.uploadedUrl}</a>`;
+        if (progressPct) progressPct.textContent = '100%';
+        if (progressBar) {
+          progressBar.style.width = '100%';
+          progressBar.style.background = '#10b981';
+        }
       }
       loadHistory();
       if (targetUrlInput && targetUrlInput.value.trim()) {
@@ -5608,13 +5737,16 @@ function initShortsSyncModule() {
 
     socket.on('shortsSyncError', data => {
       showToast(`Shorts sync error: ${data.error}`, true);
+      stopSyncPolling();
       btnRunSync.disabled = false;
       btnRunSync.innerHTML = `<i class="fa-solid fa-bolt"></i> Upload #1 Top Short Now`;
       if (progressBox) {
         progressBox.style.display = 'block';
         progressBox.style.border = '1px solid rgba(239, 68, 68, 0.7)';
+        if (progressSpinner) progressSpinner.style.display = 'none';
         if (progressTitle) progressTitle.textContent = '❌ Sync Failed';
         if (progressMsg) progressMsg.textContent = data.error || 'Failed to sync short';
+        if (progressBar) progressBar.style.background = '#ef4444';
       }
     });
 
@@ -5628,6 +5760,19 @@ function initShortsSyncModule() {
       }
     });
   }
+
+  // Check active sync state on initial page load
+  fetch('/api/shorts-sync/status')
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.isSyncing) {
+        btnRunSync.disabled = true;
+        btnRunSync.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Syncing...`;
+        updateSyncUI(data);
+        startSyncPolling();
+      }
+    })
+    .catch(() => {});
 
   // Initial loads
   loadSettingsAndChannel();

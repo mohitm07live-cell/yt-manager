@@ -14,6 +14,16 @@ class ShortsAutoSyncService {
     this.io = null;
     this.isSyncing = false;
     this.schedulerTimer = null;
+    this.syncLogs = [];
+    this.currentSyncState = {
+      isSyncing: false,
+      stage: 'idle',
+      progress: 0,
+      message: 'Ready to clone and upload shorts.',
+      candidate: null,
+      uploadedUrl: null,
+      error: null
+    };
 
     if (!fs.existsSync(this.tempDownloadDir)) {
       try {
@@ -23,6 +33,39 @@ class ShortsAutoSyncService {
 
     this.ledger = this.loadLedger();
     this.initScheduler();
+  }
+
+  emitProgress(data) {
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    this.currentSyncState = {
+      ...this.currentSyncState,
+      ...data,
+      isSyncing: data.stage !== 'completed' && data.stage !== 'error' && data.stage !== 'idle',
+      timestamp: timeStr
+    };
+
+    if (data.message) {
+      this.syncLogs.push({ time: timeStr, stage: data.stage || 'info', text: data.message });
+      if (this.syncLogs.length > 80) {
+        this.syncLogs.shift();
+      }
+      console.log(`[ShortsSync] [${timeStr}] ${data.message}`);
+    }
+
+    if (this.io) {
+      this.io.emit('shortsSyncProgress', {
+        ...this.currentSyncState,
+        logs: this.syncLogs
+      });
+    }
+  }
+
+  getSyncState() {
+    return {
+      isSyncing: this.isSyncing,
+      ...this.currentSyncState,
+      logs: this.syncLogs
+    };
   }
 
   setSocketIO(io) {
@@ -396,11 +439,12 @@ class ShortsAutoSyncService {
       '--merge-output-format', 'mp4',
       '--windows-filenames',
       '--no-mtime',
+      '--newline',
       '-o', outputTemplate
     ];
 
     if (ffmpegExe && ffmpegExe !== 'ffmpeg') {
-      downloadArgs.push('--ffmpeg-location', path.dirname(ffmpegExe));
+      downloadArgs.push('--ffmpeg-location', ffmpegExe);
     }
 
     downloadArgs.push(videoUrl);
@@ -411,10 +455,44 @@ class ShortsAutoSyncService {
         ? spawn(ytDlp.cmd, ['-m', 'yt_dlp', ...downloadArgs])
         : spawn(ytDlp.cmd, downloadArgs);
 
+      child.stdout.on('data', chunk => {
+        const text = chunk.toString();
+        const pctMatch = text.match(/\[download\]\s+([\d\.]+)%/i);
+        if (pctMatch) {
+          const dlPct = Math.min(100, parseFloat(pctMatch[1]));
+          const sizeMatch = text.match(/of\s+~?([\d\.]+\s*[kMGTP]?i?B)/i);
+          const speedMatch = text.match(/(?:at|in)\s+([\d\.]+\s*[kMGTP]?i?B\/s)/i);
+          const etaMatch = text.match(/ETA\s+([\d\:]+)/i);
+          const sizeStr = sizeMatch ? sizeMatch[1].trim() : '';
+          const speedStr = speedMatch ? speedMatch[1].trim() : '';
+          const etaStr = etaMatch ? etaMatch[1].trim() : '';
+
+          // Composite pipeline progress (download spans 10% to 60%)
+          const pipelinePct = Math.round(10 + (dlPct * 0.5));
+          this.emitProgress({
+            stage: 'downloading',
+            progress: pipelinePct,
+            downloadPercent: dlPct,
+            size: sizeStr,
+            speed: speedStr,
+            eta: etaStr,
+            message: `Downloading short: ${dlPct.toFixed(0)}%${sizeStr ? ` of ${sizeStr}` : ''}${speedStr ? ` @ ${speedStr}` : ''}${etaStr ? ` (ETA: ${etaStr})` : ''}`
+          });
+        }
+
+        if (text.includes('[Merger]') || text.includes('[ExtractAudio]')) {
+          this.emitProgress({
+            stage: 'processing',
+            progress: 60,
+            message: 'Merging video & audio streams with FFmpeg...'
+          });
+        }
+      });
+
       child.stderr.on('data', chunk => { stderr += chunk.toString(); });
       child.on('close', code => {
         if (code !== 0) {
-          return reject(new Error(`Video download failed: ${stderr}`));
+          return reject(new Error(`Video download failed: ${stderr || 'Unknown error'}`));
         }
         resolve();
       });
@@ -485,32 +563,57 @@ class ShortsAutoSyncService {
     const fileSize = fs.statSync(filePath).size;
     const mediaStream = fs.createReadStream(filePath);
 
-    if (this.io) {
-      this.io.emit('shortsSyncProgress', {
-        stage: 'uploading',
-        message: `Uploading to YouTube (${(fileSize / (1024 * 1024)).toFixed(1)} MB)...`,
-        title
-      });
-    }
+    const targetChannelName = this.ledger.destinationAccount?.channelInfo?.title || 'Connected Channel';
+    this.emitProgress({
+      stage: 'uploading',
+      progress: 65,
+      bytesUploaded: 0,
+      totalBytes: fileSize,
+      message: `Connecting to YouTube Data API v3 for channel: ${targetChannelName} (${(fileSize / (1024 * 1024)).toFixed(1)} MB)...`,
+      title
+    });
 
-    const res = await youtube.videos.insert({
-      part: ['snippet', 'status'],
-      requestBody: {
-        snippet: {
-          title,
-          description,
-          tags,
-          categoryId: String(categoryId || '20')
+    let lastUploadPct = -1;
+    const res = await youtube.videos.insert(
+      {
+        part: ['snippet', 'status'],
+        requestBody: {
+          snippet: {
+            title,
+            description,
+            tags,
+            categoryId: String(categoryId || '20')
+          },
+          status: {
+            privacyStatus: privacyStatus || 'public',
+            selfDeclaredMadeForKids: false
+          }
         },
-        status: {
-          privacyStatus: privacyStatus || 'public',
-          selfDeclaredMadeForKids: false
+        media: {
+          body: mediaStream
         }
       },
-      media: {
-        body: mediaStream
+      {
+        onUploadProgress: (evt) => {
+          const bytesRead = evt.bytesRead || 0;
+          const uploadPct = Math.min(100, Math.round((bytesRead / fileSize) * 100));
+          if (uploadPct !== lastUploadPct) {
+            lastUploadPct = uploadPct;
+            // Pipeline progress: Upload spans 65% to 98%
+            const pipelinePct = Math.round(65 + (uploadPct * 0.33));
+            this.emitProgress({
+              stage: 'uploading',
+              progress: pipelinePct,
+              uploadPercent: uploadPct,
+              bytesUploaded: bytesRead,
+              totalBytes: fileSize,
+              message: `Uploading to YouTube: ${uploadPct}% (${(bytesRead / (1024 * 1024)).toFixed(1)} MB / ${(fileSize / (1024 * 1024)).toFixed(1)} MB)...`,
+              title
+            });
+          }
+        }
       }
-    });
+    );
 
     const uploadedId = res.data?.id;
     if (!uploadedId) {
@@ -542,9 +645,11 @@ class ShortsAutoSyncService {
     let downloadedFilePath = null;
 
     try {
-      if (this.io) {
-        this.io.emit('shortsSyncProgress', { stage: 'scanning', message: `Scanning top shorts from ${targetUrl}...` });
-      }
+      this.emitProgress({
+        stage: 'scanning',
+        progress: 5,
+        message: `Scanning top performing shorts from ${targetUrl}...`
+      });
 
       // 1. Scan channel shorts
       const shorts = await this.scanChannelShorts(targetUrl, 30);
@@ -552,23 +657,35 @@ class ShortsAutoSyncService {
         throw new Error('No shorts found on the specified channel URL.');
       }
 
+      this.emitProgress({
+        stage: 'scanning',
+        progress: 10,
+        message: `Scanned ${shorts.length} shorts. Analyzing view counts to find #1 top short...`
+      });
+
       // 2. Find top performing short not yet uploaded
       const candidate = shorts.find(s => !s.isProcessed);
       if (!candidate) {
         throw new Error('All top performing shorts from this channel have already been synced!');
       }
 
-      if (this.io) {
-        this.io.emit('shortsSyncProgress', {
-          stage: 'downloading',
-          message: `Downloading #${candidate.id}: "${candidate.title}" (${candidate.views.toLocaleString()} views)...`,
-          candidate
-        });
-      }
+      this.emitProgress({
+        stage: 'downloading',
+        progress: 15,
+        message: `Selected #1 Top Short: "${candidate.title}" (${(candidate.views || 0).toLocaleString()} views). Preparing stream download...`,
+        candidate
+      });
 
       // 3. Download video in highest quality + metadata
       const downloadResult = await this.downloadShortWithMetadata(candidate.id);
       downloadedFilePath = downloadResult.filePath;
+
+      this.emitProgress({
+        stage: 'processing',
+        progress: 62,
+        message: `Video downloaded (${(fs.statSync(downloadedFilePath).size / (1024 * 1024)).toFixed(1)} MB). Preparing YouTube metadata and tags...`,
+        candidate
+      });
 
       // 4. Upload to destination YouTube channel
       const uploadResult = await this.uploadToYouTube(
@@ -603,22 +720,29 @@ class ShortsAutoSyncService {
         message: `[Auto Shorts] Cloned & Uploaded: "${candidate.title}" -> ${uploadResult.uploadedUrl}`
       });
 
+      this.emitProgress({
+        stage: 'completed',
+        progress: 100,
+        message: `🎉 Successfully uploaded! Short is live at ${uploadResult.uploadedUrl}`,
+        candidate,
+        historyEntry
+      });
+
       if (this.io) {
-        this.io.emit('shortsSyncProgress', {
-          stage: 'completed',
-          message: `Successfully uploaded! Short is live at ${uploadResult.uploadedUrl}`,
-          historyEntry
-        });
+        this.io.emit('shortsSyncSuccess', historyEntry);
         this.io.emit('shortsSyncHistoryUpdated', this.ledger.history);
       }
 
       return historyEntry;
     } catch (err) {
+      this.emitProgress({
+        stage: 'error',
+        progress: 0,
+        message: `Sync failed: ${err.message}`,
+        error: err.message
+      });
       if (this.io) {
-        this.io.emit('shortsSyncProgress', {
-          stage: 'error',
-          message: `Sync failed: ${err.message}`
-        });
+        this.io.emit('shortsSyncError', { error: err.message });
       }
       throw err;
     } finally {

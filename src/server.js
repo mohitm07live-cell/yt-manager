@@ -1160,6 +1160,15 @@ app.post('/api/shorts-sync/scan', async (req, res) => {
   }
 });
 
+app.get('/api/shorts-sync/status', (req, res) => {
+  try {
+    const state = shortsAutoSyncService.getSyncState();
+    res.json({ success: true, ...state });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/shorts-sync/run', async (req, res) => {
   try {
     const { channelUrl } = req.body;
